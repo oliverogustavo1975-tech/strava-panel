@@ -29,6 +29,7 @@ function saveAthletes(data) {
 }
 
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.json());
 
 app.get('/auth/strava', (req, res) => {
   const authUrl = `https://www.strava.com/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&approval_prompt=auto&scope=read,activity:read_all,profile:read_all`;
@@ -100,6 +101,57 @@ app.get('/api/athletes', (req, res) => {
     connected_at: a.connected_at
   }));
   res.json(list);
+});
+
+async function getValidAccessToken(athleteId) {
+  const athletes = readAthletes();
+  const athlete = athletes[athleteId];
+  if (!athlete) return null;
+
+  const now = Math.floor(Date.now() / 1000);
+  if (athlete.expires_at > now + 60) {
+    return athlete.access_token;
+  }
+
+  const response = await fetch('https://www.strava.com/oauth/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      client_id: CLIENT_ID,
+      client_secret: CLIENT_SECRET,
+      grant_type: 'refresh_token',
+      refresh_token: athlete.refresh_token
+    })
+  });
+
+  const data = await response.json();
+  if (data.access_token) {
+    athlete.access_token = data.access_token;
+    athlete.refresh_token = data.refresh_token;
+    athlete.expires_at = data.expires_at;
+    athletes[athleteId] = athlete;
+    saveAthletes(athletes);
+    return data.access_token;
+  }
+  return null;
+}
+
+app.get('/api/athlete/:id/activities', async (req, res) => {
+  try {
+    const token = await getValidAccessToken(req.params.id);
+    if (!token) return res.status(401).json({ error: 'No se pudo autenticar al atleta' });
+
+    const after = Math.floor(Date.now() / 1000) - (90 * 24 * 60 * 60);
+    const response = await fetch(
+      `https://www.strava.com/api/v3/athlete/activities?after=${after}&per_page=100`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const activities = await response.json();
+    res.json(activities);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error trayendo actividades' });
+  }
 });
 
 app.listen(PORT, () => {
