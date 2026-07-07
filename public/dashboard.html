@@ -4,36 +4,228 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Panel de Entrenamientos</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
-  body { font-family: -apple-system, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
-  h1 { color: #fc4c02; }
-  select { padding: 10px; font-size: 16px; width: 100%; margin-bottom: 20px; }
-  .card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-  .card h3 { margin: 0 0 8px 0; color: #333; }
-  .stats { display: flex; flex-wrap: wrap; gap: 12px; font-size: 14px; color: #666; }
-  .stat { background: #f0f0f0; padding: 6px 10px; border-radius: 6px; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, sans-serif; background: #f5f5f5; margin: 0; padding: 16px; color: #222; }
+  h1 { color: #fc4c02; font-size: 24px; margin-bottom: 12px; }
+  h2 { font-size: 17px; color: #333; margin: 0 0 10px 0; }
+  select { padding: 12px; font-size: 16px; width: 100%; margin-bottom: 16px; border-radius: 8px; border: 1px solid #ccc; }
+  .card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .metric-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .metric { flex: 1; min-width: 130px; background: #f7f7f7; border-radius: 8px; padding: 10px; text-align: center; }
+  .metric .value { font-size: 22px; font-weight: bold; }
+  .metric .label { font-size: 12px; color: #777; margin-top: 2px; }
+  .status-ok { color: #2e7d32; }
+  .status-warn { color: #e67e22; }
+  .status-risk { color: #d32f2f; }
+  .explain { font-size: 13px; color: #666; margin-top: 6px; line-height: 1.4; }
+  canvas { max-width: 100%; }
   #loading { text-align: center; padding: 40px; color: #999; }
+  .activity-card { font-size: 14px; }
+  .activity-card h3 { margin: 0 0 6px 0; font-size: 15px; }
+  .stats { display: flex; flex-wrap: wrap; gap: 8px; font-size: 13px; color: #666; }
+  .stat { background: #f0f0f0; padding: 5px 9px; border-radius: 6px; }
 </style>
 </head>
 <body>
   <h1>Panel de Entrenamientos</h1>
   <select id="athleteSelect"><option>Cargando alumnos...</option></select>
-  <div id="content"><div id="loading">Elegi un alumno para ver sus entrenamientos</div></div>
+  <div id="content"><div id="loading">Elegi un alumno para ver su analisis</div></div>
 
 <script>
+let chartFatiga, chartEficacia, chartCorrelacion;
+
 async function loadAthletes() {
   const res = await fetch('/api/athletes');
   const athletes = await res.json();
   const select = document.getElementById('athleteSelect');
   select.innerHTML = '<option value="">Elegi un alumno</option>' +
     athletes.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
-  select.onchange = () => loadActivities(select.value);
+  select.onchange = () => loadAnalysis(select.value);
 }
 
-async function loadActivities(athleteId) {
+function destroyCharts() {
+  [chartFatiga, chartEficacia, chartCorrelacion].forEach(c => c && c.destroy());
+}
+
+function cargaDeActividad(act) {
+  if (act.suffer_score) return act.suffer_score;
+  if (act.average_heartrate && act.moving_time) {
+    return Math.round((act.moving_time / 60) * (act.average_heartrate / 130));
+  }
+  return Math.round((act.moving_time || 0) / 60 * 0.5);
+}
+
+function calcularACWR(activities) {
+  const ahora = Date.now();
+  const dia = 24 * 60 * 60 * 1000;
+  let cargaAguda = 0, cargaCronica = 0;
+
+  activities.forEach(act => {
+    const fecha = new Date(act.start_date_local).getTime();
+    const diasAtras = (ahora - fecha) / dia;
+    const carga = cargaDeActividad(act);
+    if (diasAtras <= 7) cargaAguda += carga;
+    if (diasAtras <= 28) cargaCronica += carga;
+  });
+
+  const promedioAgudo = cargaAguda;
+  const promedioCronico = cargaCronica / 4;
+  const ratio = promedioCronico > 0 ? (promedioAgudo / promedioCronico) : 0;
+  return { promedioAgudo, promedioCronico, ratio };
+}
+
+function renderEstadoFatiga(acwr) {
+  let estado, clase, explicacion;
+  if (acwr.promedioCronico === 0) {
+    estado = 'Sin datos suficientes';
+    clase = '';
+    explicacion = 'Se necesitan al menos unas semanas de historial para calcular esto.';
+  } else if (acwr.ratio < 0.8) {
+    estado = 'Carga baja';
+    clase = 'status-warn';
+    explicacion = 'La carga reciente es menor a la habitual. Puede ser descanso planificado o perdida de forma.';
+  } else if (acwr.ratio <= 1.3) {
+    estado = 'Zona optima';
+    clase = 'status-ok';
+    explicacion = 'La carga reciente esta en linea con lo habitual. Buen equilibrio entre entrenar y recuperar.';
+  } else if (acwr.ratio <= 1.5) {
+    estado = 'Precaucion';
+    clase = 'status-warn';
+    explicacion = 'La carga subio bastante respecto a lo habitual. Vigilar signos de fatiga.';
+  } else {
+    estado = 'Riesgo alto';
+    clase = 'status-risk';
+    explicacion = 'La carga aumento mucho y rapido respecto a las ultimas semanas. Mayor riesgo de lesion o sobreentrenamiento.';
+  }
+  return `
+    <div class="card">
+      <h2>Carga y fatiga</h2>
+      <div class="metric-row">
+        <div class="metric"><div class="value">${Math.round(acwr.promedioAgudo)}</div><div class="label">Carga ultimos 7 dias</div></div>
+        <div class="metric"><div class="value">${Math.round(acwr.promedioCronico)}</div><div class="label">Carga promedio (28 dias)</div></div>
+        <div class="metric"><div class="value ${clase}">${acwr.ratio.toFixed(2)}</div><div class="label">Ratio agudo/cronico</div></div>
+      </div>
+      <div class="explain"><strong class="${clase}">${estado}.</strong> ${explicacion}</div>
+    </div>
+  `;
+}
+
+function calcularEficacia(activities) {
+  const validas = activities
+    .filter(a => a.average_watts && a.average_heartrate)
+    .sort((a, b) => new Date(a.start_date_local) - new Date(b.start_date_local));
+
+  return validas.map(a => ({
+    fecha: new Date(a.start_date_local).toLocaleDateString('es-UY', { day: '2-digit', month: '2-digit' }),
+    eficacia: +(a.average_watts / a.average_heartrate).toFixed(2),
+    watts: a.average_watts,
+    hr: a.average_heartrate
+  }));
+}
+
+function renderGraficos(eficaciaData) {
+  if (eficaciaData.length === 0) {
+    return '<div class="card"><h2>Eficacia y correlacion pulso-potencia</h2><div class="explain">No hay entrenamientos con datos de potencia y frecuencia cardiaca al mismo tiempo todavia.</div></div>';
+  }
+
+  return `
+    <div class="card">
+      <h2>Eficacia aerobica (watts por pulsacion)</h2>
+      <canvas id="chartEficacia" height="180"></canvas>
+      <div class="explain">Si esta linea sube con el tiempo, el corazon rinde mas por cada watt generado: mejora la forma aerobica.</div>
+    </div>
+    <div class="card">
+      <h2>Correlacion pulso vs potencia</h2>
+      <canvas id="chartCorrelacion" height="200"></canvas>
+      <div class="explain">Cada punto es un entrenamiento. Puntos mas arriba a la derecha muestran sesiones de mayor intensidad.</div>
+    </div>
+  `;
+}
+
+function dibujarGraficos(eficaciaData) {
+  if (eficaciaData.length === 0) return;
+
+  const ctxE = document.getElementById('chartEficacia');
+  if (ctxE) {
+    chartEficacia = new Chart(ctxE, {
+      type: 'line',
+      data: {
+        labels: eficaciaData.map(d => d.fecha),
+        datasets: [{
+          label: 'Watts / FC',
+          data: eficaciaData.map(d => d.eficacia),
+          borderColor: '#fc4c02',
+          backgroundColor: 'rgba(252,76,2,0.1)',
+          tension: 0.3,
+          fill: true
+        }]
+      },
+      options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: false } } }
+    });
+  }
+
+  const ctxC = document.getElementById('chartCorrelacion');
+  if (ctxC) {
+    chartCorrelacion = new Chart(ctxC, {
+      type: 'scatter',
+      data: {
+        datasets: [{
+          label: 'Sesiones',
+          data: eficaciaData.map(d => ({ x: d.hr, y: d.watts })),
+          backgroundColor: '#fc4c02'
+        }]
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { title: { display: true, text: 'Frecuencia cardiaca promedio (ppm)' } },
+          y: { title: { display: true, text: 'Potencia promedio (W)' } }
+        }
+      }
+    });
+  }
+}
+
+function renderListaActividades(activities) {
+  const ordenadas = [...activities].sort((a, b) => new Date(b.start_date_local) - new Date(a.start_date_local));
+  return `
+    <div class="card">
+      <h2>Ultimos entrenamientos</h2>
+      ${ordenadas.slice(0, 10).map(act => {
+        const date = new Date(act.start_date_local).toLocaleDateString('es-UY');
+        const km = (act.distance / 1000).toFixed(1);
+        const minutos = Math.round(act.moving_time / 60);
+        const hr = act.average_heartrate ? Math.round(act.average_heartrate) + ' ppm' : '-';
+        const watts = act.average_watts ? Math.round(act.average_watts) + ' W' : '-';
+        return `
+          <div class="activity-card" style="margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid #eee;">
+            <h3>${act.name}</h3>
+            <div class="stats">
+              <span class="stat">${date}</span>
+              <span class="stat">${act.type}</span>
+              <span class="stat">${km} km</span>
+              <span class="stat">${minutos} min</span>
+              <span class="stat">FC: ${hr}</span>
+              <span class="stat">Potencia: ${watts}</span>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+async function loadAnalysis(athleteId) {
   const content = document.getElementById('content');
-  if (!athleteId) { content.innerHTML = '<div id="loading">Elegi un alumno para ver sus entrenamientos</div>'; return; }
-  content.innerHTML = '<div id="loading">Cargando entrenamientos...</div>';
+  destroyCharts();
+
+  if (!athleteId) {
+    content.innerHTML = '<div id="loading">Elegi un alumno para ver su analisis</div>';
+    return;
+  }
+  content.innerHTML = '<div id="loading">Cargando y calculando...</div>';
 
   const res = await fetch(`/api/athlete/${athleteId}/activities`);
   const activities = await res.json();
@@ -43,26 +235,15 @@ async function loadActivities(athleteId) {
     return;
   }
 
-  content.innerHTML = activities.map(act => {
-    const date = new Date(act.start_date_local).toLocaleDateString('es-UY');
-    const km = (act.distance / 1000).toFixed(1);
-    const minutos = Math.round(act.moving_time / 60);
-    const hr = act.average_heartrate ? Math.round(act.average_heartrate) + ' ppm' : '-';
-    const watts = act.average_watts ? Math.round(act.average_watts) + ' W' : '-';
-    return `
-      <div class="card">
-        <h3>${act.name}</h3>
-        <div class="stats">
-          <span class="stat">${date}</span>
-          <span class="stat">${act.type}</span>
-          <span class="stat">${km} km</span>
-          <span class="stat">${minutos} min</span>
-          <span class="stat">FC prom: ${hr}</span>
-          <span class="stat">Potencia: ${watts}</span>
-        </div>
-      </div>
-    `;
-  }).join('');
+  const acwr = calcularACWR(activities);
+  const eficaciaData = calcularEficacia(activities);
+
+  content.innerHTML =
+    renderEstadoFatiga(acwr) +
+    renderGraficos(eficaciaData) +
+    renderListaActividades(activities);
+
+  dibujarGraficos(eficaciaData);
 }
 
 loadAthletes();
