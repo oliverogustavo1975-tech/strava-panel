@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel de Entrenamientos</title>
+<style>
+  body { font-family: -apple-system, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
+  h1 { color: #fc4c02; }
+  select { padding: 10px; font-size: 16px; width: 100%; margin-bottom: 20px; }
+  .card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .card h3 { margin: 0 0 8px 0; color: #333; }
+  .stats { display: flex; flex-wrap: wrap; gap: 12px; font-size: 14px; color: #666; }
+  .stat { background: #f0f0f0; padding: 6px 10px; border-radius: 6px; }
+  #loading { text-align: center; padding: 40px; color: #999; }
+</style>
+</head>
+<body>
+  <h1>Panel de Entrenamientos</h1>
+  <select id="athleteSelect"><option>Cargando alumnos...</option></select>
+  <div id="content"><div id="loading">Elegi un alumno para ver sus entrenamientos</div></div>
+
+<script>
+async function loadAthletes() {
+  const res = await fetch('/api/athletes');
+  const athletes = await res.json();
+  const select = document.getElementById('athleteSelect');
+  select.innerHTML = '<option value="">Elegi un alumno</option>' +
+    athletes.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+  select.onchange = () => loadActivities(select.value);
+}
+
+async function loadActivities(athleteId) {
+  const content = document.getElementById('content');
+  if (!athleteId) { content.innerHTML = '<div id="loading">Elegi un alumno para ver sus entrenamientos</div>'; return; }
+  content.innerHTML = '<div id="loading">Cargando entrenamientos...</div>';
+
+  const res = await fetch(`/api/athlete/${athleteId}/activities`);
+  const activities = await res.json();
+
+  if (!Array.isArray(activities) || activities.length === 0) {
+    content.innerHTML = '<div id="loading">No se encontraron entrenamientos recientes</div>';
+    return;
+  }
+
+  content.innerHTML = activities.map(act => {
+    const date = new Date(act.start_date_local).toLocaleDateString('es-UY');
+    const km = (act.distance / 1000).toFixed(1);
+    const minutos = Math.round(act.moving_time / 60);
+    const hr = act.average_heartrate ? Math.round(act.average_heartrate) + ' ppm' : '-';
+    const watts = act.average_watts ? Math.round(act.average_watts) + ' W' : '-';
+    return `
+      <div class="card">
+        <h3>${act.name}</h3>
+        <div class="stats">
+          <span class="stat">${date}</span>
+          <span class="stat">${act.type}</span>
+          <span class="stat">${km} km</span>
+          <span class="stat">${minutos} min</span>
+          <span class="stat">FC prom: ${hr}</span>
+          <span class="stat">Potencia: ${watts}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+loadAthletes();
+</script>
+</body>
+</html>
