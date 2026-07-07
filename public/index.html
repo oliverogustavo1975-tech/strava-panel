@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conecta tu Strava</title>
+  <style>
+    body {
+      font-family: -apple-system, sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: white;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      text-align: center;
+      max-width: 360px;
+    }
+    h1 { color: #fc4c02; font-size: 22px; }
+    p { color: #444; line-height: 1.5; }
+    a.btn {
+      display: inline-block;
+      background: #fc4c02;
+      color: white;
+      padding: 14px 28px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+      margin-top: 20px;
+    }
+    a.btn:hover { background: #e04400; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Panel de Entrenamiento</h1>
+    <p>Conecta tu cuenta de Strava para que tu entrenador pueda analizar tu carga, fatiga y progreso.</p>
+    <p><small>No vas a compartir tu contrasena. Solo autorizas acceso a tus datos de entrenamiento.</small></p>
+    <a class="btn" href="/auth/strava">Conectar con Strava</a>
+  </div>
+</body>
+</html>
