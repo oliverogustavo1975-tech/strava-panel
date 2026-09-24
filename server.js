@@ -7,6 +7,8 @@ const { syncAthlete, syncAll } = require('./sync');
 const { loadAthleteData, summarize, project } = require('./metrics');
 const coachV = require('./coach');
 const athleteV = require('./athlete');
+const bib = require('./biblioteca');
+const { todayISO, addDays, mondayOf } = require('./util');
 
 const PORT = process.env.PORT || 3000;
 const SECRET = process.env.SESSION_SECRET || 'dev-secret-cambiar';
@@ -152,9 +154,88 @@ app.post('/coach/sync', requireCoach, wrap(async (req, res) => {
   back(res, '/coach', 'Sincronización completa');
 }));
 
+app.get('/hyt-workout.js', (req, res) => res.type('application/javascript').sendFile(require('path').join(__dirname, 'workout.js')));
+
 app.get('/coach/workouts/nuevo', requireCoach, wrap(async (req, res) => {
-  const athletes = await q('SELECT * FROM athletes WHERE active ORDER BY name');
-  res.send(coachV.workoutBuilder(athletes, { msg: req.query.msg, preselect: req.query.atleta, unread: await unreadCount() }));
+  const [athletes, folders] = await Promise.all([q('SELECT * FROM athletes WHERE active ORDER BY name'), q('SELECT * FROM folders ORDER BY name')]);
+  const lib = req.query.lib ? await one('SELECT * FROM library WHERE id=$1', [req.query.lib]) : null;
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(req.query.fecha || '') ? req.query.fecha : null;
+  res.send(bib.builder({ athletes, folders, lib, preselect: req.query.atleta, date, msg: req.query.msg, unread: await unreadCount() }));
+}));
+
+// ---------- Biblioteca ----------
+app.get('/coach/biblioteca', requireCoach, wrap(async (req, res) => {
+  const cur = req.query.carpeta ?? '';
+  const folders = await q('SELECT * FROM folders ORDER BY name');
+  const all = await q('SELECT l.*, f.name AS folder_name FROM library l LEFT JOIN folders f ON f.id = l.folder_id ORDER BY l.updated_at DESC');
+  const counts = { all: all.length, 0: all.filter((w) => !w.folder_id).length };
+  folders.forEach((f) => { counts[f.id] = all.filter((w) => w.folder_id === f.id).length; });
+  const items = cur === '' ? all : cur === '0' ? all.filter((w) => !w.folder_id) : all.filter((w) => String(w.folder_id) === String(cur));
+  res.send(bib.library({ folders, items, current: cur, counts, msg: req.query.msg, unread: await unreadCount() }));
+}));
+app.post('/coach/biblioteca', requireCoach, wrap(async (req, res) => {
+  const { name, type, target, description } = req.body;
+  const folder = req.body.folder_id ? Number(req.body.folder_id) : null;
+  if (!String(name || '').trim() || !String(description || '').trim()) return back(res, '/coach/workouts/nuevo' + (req.body.lib_id ? '?lib=' + req.body.lib_id : ''), '!Poné un nombre y armá la estructura antes de guardar');
+  let id = req.body.lib_id && !req.query.copia ? Number(req.body.lib_id) : null;
+  if (id) await q('UPDATE library SET name=$2, type=$3, target=$4, description=$5, folder_id=$6, updated_at=now() WHERE id=$1', [id, name.trim(), type, target || 'power', description, folder]);
+  else id = (await one('INSERT INTO library (name, type, target, description, folder_id) VALUES ($1,$2,$3,$4,$5) RETURNING id', [name.trim(), type, target || 'power', description, folder])).id;
+  back(res, '/coach/biblioteca' + (folder ? '?carpeta=' + folder : ''), `«${name.trim()}» guardado en la biblioteca`);
+}));
+app.post('/coach/biblioteca/carpetas', requireCoach, wrap(async (req, res) => {
+  const name = String(req.body.name || '').trim().slice(0, 60);
+  if (!name) return back(res, '/coach/biblioteca', '!Poné un nombre a la carpeta');
+  const f = await one('INSERT INTO folders (name) VALUES ($1) RETURNING id', [name]);
+  back(res, '/coach/biblioteca?carpeta=' + f.id, `Carpeta «${name}» creada`);
+}));
+app.post('/coach/biblioteca/carpetas/:id/borrar', requireCoach, wrap(async (req, res) => {
+  await q('DELETE FROM folders WHERE id=$1', [req.params.id]);
+  back(res, '/coach/biblioteca', 'Carpeta borrada; sus workouts quedaron en «Sin carpeta»');
+}));
+app.post('/coach/biblioteca/:id/borrar', requireCoach, wrap(async (req, res) => {
+  await q('DELETE FROM library WHERE id=$1', [req.params.id]);
+  back(res, '/coach/biblioteca', 'Workout borrado');
+}));
+
+// ---------- Semana del atleta ----------
+app.get('/coach/atleta/:id/semana', requireCoach, wrap(async (req, res) => {
+  const a = await one('SELECT * FROM athletes WHERE id=$1', [req.params.id]);
+  if (!a) return res.status(404).send('No encontrado');
+  const today = todayISO();
+  const mon = mondayOf(/^\d{4}-\d{2}-\d{2}$/.test(req.query.d || '') ? req.query.d : today);
+  const sun = addDays(mon, 6);
+  const anchorDate = addDays(mon, -1) < today ? addDays(mon, -1) : addDays(today, -1);
+  const anchorRow = await one('SELECT date, ctl, atl FROM wellness WHERE athlete_id=$1 AND date <= $2 AND ctl IS NOT NULL ORDER BY date DESC LIMIT 1', [a.id, anchorDate]);
+  const from = addDays(anchorDate, 1);
+  const [acts, plan, last28, lib] = await Promise.all([
+    q('SELECT id, date, type, name, moving_time, load FROM activities WHERE athlete_id=$1 AND date BETWEEN $2 AND $3 ORDER BY date', [a.id, from, sun]),
+    q('SELECT * FROM planned WHERE athlete_id=$1 AND date BETWEEN $2 AND $3 ORDER BY date, id', [a.id, from, sun]),
+    one('SELECT COALESCE(SUM(load),0) AS s FROM activities WHERE athlete_id=$1 AND date > $2 AND date <= $3', [a.id, addDays(today, -28), today]),
+    q('SELECT l.*, f.name AS folder_name FROM library l LEFT JOIN folders f ON f.id = l.folder_id ORDER BY f.name NULLS FIRST, l.name'),
+  ]);
+  const days = [];
+  for (let d = from; d <= sun; d = addDays(d, 1)) days.push({ date: d, acts: acts.filter((x) => x.date === d), plan: plan.filter((p) => p.date === d) });
+  const anchor = anchorRow ? { date: anchorRow.date, ctl: anchorRow.ctl, atl: anchorRow.atl } : { ctl: null, atl: null };
+  res.send(bib.week({ a, mon, days, anchor, avg4w: Number(last28.s) / 4, lib, msg: req.query.msg, unread: await unreadCount() }));
+}));
+app.post('/coach/atleta/:id/semana/enviar', requireCoach, wrap(async (req, res) => {
+  const a = await one('SELECT * FROM athletes WHERE id=$1', [req.params.id]);
+  const url = `/coach/atleta/${req.params.id}/semana?d=${encodeURIComponent(req.query.d || '')}`;
+  if (!a || !a.intervals_id) return back(res, url, '!El atleta no está vinculado a Intervals');
+  let sims = [];
+  try { sims = JSON.parse(req.body.sims || '[]'); } catch (e) { sims = []; }
+  let ok = 0, fail = 0;
+  for (const s of sims.slice(0, 30)) {
+    const w = await one('SELECT * FROM library WHERE id=$1', [s.lib_id]);
+    if (!w || !/^\d{4}-\d{2}-\d{2}$/.test(s.date)) continue;
+    try {
+      const ev = await api.createEvent(a.intervals_id, { category: 'WORKOUT', start_date_local: `${s.date}T00:00:00`, type: w.type, name: w.name, description: w.description });
+      await q(`INSERT INTO planned (athlete_id, ext_id, date, type, name, description, load) VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT (athlete_id, ext_id) DO NOTHING`,
+        [a.id, String(ev.id), s.date, w.type, w.name, w.description, ev.icu_training_load ?? bib.estimate(w.description, w.type, a).tss]);
+      ok++;
+    } catch (e) { fail++; }
+  }
+  back(res, url, fail ? `!Enviados ${ok}, fallaron ${fail}` : `${ok} workout${ok === 1 ? '' : 's'} enviado${ok === 1 ? '' : 's'} al calendario de ${a.name.split(' ')[0]}`);
 }));
 
 app.post('/coach/workouts', requireCoach, wrap(async (req, res) => {
@@ -169,7 +250,7 @@ app.post('/coach/workouts', requireCoach, wrap(async (req, res) => {
     try {
       const ev = await api.createEvent(a.intervals_id, { category: 'WORKOUT', start_date_local: `${date}T00:00:00`, type, name, description });
       await q(`INSERT INTO planned (athlete_id, ext_id, date, type, name, description, load) VALUES ($1,$2,$3,$4,$5,$6,$7)
-               ON CONFLICT (athlete_id, ext_id) DO NOTHING`, [a.id, String(ev.id), date, type, name, description, ev.icu_training_load ?? null]);
+               ON CONFLICT (athlete_id, ext_id) DO NOTHING`, [a.id, String(ev.id), date, type, name, description, ev.icu_training_load ?? bib.estimate(description, type, a).tss]);
       ok.push(a.name.split(' ')[0]);
     } catch (e) { fail.push(`${a.name.split(' ')[0]} (${e.status || 'error'})`); }
   }

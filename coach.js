@@ -119,6 +119,7 @@ function athleteDetail(a, s, proj, messages, { msg, baseUrl, unread }) {
     <div class="right">
       <span class="pill t-${a.intervals_id ? (a.last_sync_error ? 'high' : 'ok') : 'mid'}">${a.intervals_id ? (a.last_sync_error ? 'Error de sync' : 'Intervals · ' + ago(a.last_sync_at)) : 'No vinculado'}</span>
       <form method="post" action="/coach/atleta/${a.id}/sync"><button class="btn ghost">${icon.sync}Sincronizar</button></form>
+      <a class="btn ghost" href="/coach/atleta/${a.id}/semana">Planificar semana</a>
       <a class="btn" href="/coach/workouts/nuevo?atleta=${a.id}">Asignar workout</a></div>
   </header>
 
@@ -152,7 +153,7 @@ function athleteDetail(a, s, proj, messages, { msg, baseUrl, unread }) {
     </aside>
   </div>
 
-  <section class="card stack" aria-label="Semana"><div style="display:flex;align-items:baseline;gap:12px"><h2>Esta semana</h2><span class="muted">realizado / planificado</span><span class="num" style="margin-left:auto">${Math.round(s.weekDone)} / ${Math.round(s.weekPlanned)} TSS</span></div>
+  <section class="card stack" aria-label="Semana"><div style="display:flex;align-items:baseline;gap:12px"><h2>Esta semana <a href="/coach/atleta/${a.id}/semana" style="font-size:13px;font-weight:400;color:#F08A4B">· planificar y proyectar →</a></h2><span class="muted">realizado / planificado</span><span class="num" style="margin-left:auto">${Math.round(s.weekDone)} / ${Math.round(s.weekPlanned)} TSS</span></div>
     <div class="week">${week}</div></section>
 
   <section class="card stack" aria-label="Carga por deporte"><div style="display:flex;align-items:baseline;gap:12px"><h2>Carga por deporte</h2><span class="muted">últimos 28 días · % de la carga total, tiempo y distancia</span></div>
