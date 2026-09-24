@@ -1,17 +1,20 @@
 {
-  "name": "strava-panel-entrenamiento",
-  "version": "1.0.0",
-  "description": "Panel para que los alumnos conecten su cuenta de Strava y el entrenador vea sus datos de entrenamiento",
+  "name": "hyt-entrenamiento",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Plataforma de coaching HyT Entrenamiento",
   "main": "server.js",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "demo": "node seed-demo.js"
   },
   "dependencies": {
-    "express": "^4.19.2",
-    "node-fetch": "^2.7.0",
-    "dotenv": "^16.4.5"
-  },
-  "engines": {
-    "node": ">=18.0.0"
+    "express": "^4.21.2",
+    "multer": "^2.0.2",
+    "pg": "^8.13.1",
+    "leaflet": "^1.9.4"
   }
 }
