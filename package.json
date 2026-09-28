@@ -1,0 +1,22 @@
+{
+  "name": "torre",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Torre — plataforma de logística y gestión de flota (grúas, camiones, operarios)",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node src/server.js",
+    "start": "node src/server.js",
+    "migrate": "node db/migrate.js",
+    "seed": "node db/seed.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.21.0",
+    "pg": "^8.23.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
