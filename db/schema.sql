@@ -140,3 +140,10 @@ CREATE TABLE IF NOT EXISTS deposito (
   created_at     timestamptz NOT NULL DEFAULT now(),
   updated_at     timestamptz NOT NULL DEFAULT now()
 );
+
+-- Vínculo fletes <-> depósito (ingreso/egreso automático)
+ALTER TABLE fletes ADD COLUMN IF NOT EXISTS a_deposito boolean NOT NULL DEFAULT false;
+ALTER TABLE fletes ADD COLUMN IF NOT EXISTS deposito_ingreso_id text;
+ALTER TABLE fletes ADD COLUMN IF NOT EXISTS desde_deposito_id text;
+ALTER TABLE deposito ADD COLUMN IF NOT EXISTS flete_ingreso_id text;
+ALTER TABLE deposito ADD COLUMN IF NOT EXISTS flete_egreso_id text;
