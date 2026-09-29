@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Torre — <%= isNew ? "Nuevo trabajo" : "Editar trabajo" %></title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="wrap wrap-narrow">
+  <div class="form-card">
+    <h2><%= isNew ? "Nuevo trabajo" : "Editar trabajo" %></h2>
+    <form method="post" action="<%= isNew ? '/trabajos' : '/trabajos/' + j.id %>">
+      <label class="field">
+        <span>Título</span>
+        <input type="text" name="titulo" value="<%= j.titulo || '' %>" required>
+      </label>
+      <label class="field">
+        <span>Cliente</span>
+        <input type="text" name="cliente" value="<%= j.cliente || '' %>">
+      </label>
+      <label class="field">
+        <span>Solicitante</span>
+        <input type="text" name="solicitante" value="<%= j.solicitante || '' %>">
+      </label>
+      <label class="field">
+        <span>Contacto del solicitante</span>
+        <input type="text" name="solicitante_contacto" value="<%= j.solicitante_contacto || '' %>">
+      </label>
+      <label class="field">
+        <span>Ubicación</span>
+        <input type="text" name="ubicacion" value="<%= j.ubicacion || '' %>">
+      </label>
+      <label class="field">
+        <span>Ubicación (link de Maps)</span>
+        <input type="text" name="ubicacion_maps_url" value="<%= j.ubicacion_maps_url || '' %>">
+      </label>
+      <label class="field">
+        <span>Inicio</span>
+        <input type="datetime-local" name="fecha_inicio" value="<%= toInputLocal(j.fecha_inicio) %>" required>
+      </label>
+      <label class="field">
+        <span>Fin</span>
+        <input type="datetime-local" name="fecha_fin" value="<%= toInputLocal(j.fecha_fin) %>">
+      </label>
+      <label class="field">
+        <span>Estado</span>
+        <select name="estado">
+          <option value="pendiente" <%= (j.estado||'pendiente')==='pendiente'?'selected':'' %>>Pendiente</option>
+          <option value="en_curso" <%= j.estado==='en_curso'?'selected':'' %>>En curso</option>
+          <option value="finalizado" <%= j.estado==='finalizado'?'selected':'' %>>Finalizado</option>
+          <option value="cancelado" <%= j.estado==='cancelado'?'selected':'' %>>Cancelado</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Distancia (km)</span>
+        <input type="number" step="0.1" name="distancia_km" value="<%= j.distancia_km ?? '' %>">
+      </label>
+      <label class="field">
+        <span>Tonelaje requerido</span>
+        <input type="number" step="0.1" name="tonelaje_requerido" value="<%= j.tonelaje_requerido ?? '' %>">
+      </label>
+      <label class="field">
+        <span>Tipo de grúa requerida</span>
+        <input type="text" name="tipo_grua_requerida" value="<%= j.tipo_grua_requerida || '' %>">
+      </label>
+      <label class="field">
+        <span>Viajes de movilización</span>
+        <input type="number" name="viajes_movilizacion_total" value="<%= j.viajes_movilizacion_total ?? '' %>">
+      </label>
+      <label class="field">
+        <span>Notas técnicas</span>
+        <textarea name="notas_tecnicas" rows="3"><%= j.notas_tecnicas || '' %></textarea>
+      </label>
+
+      <div class="field-group">
+        <span class="field-group-title">Grúas asignadas</span>
+        <div class="checks">
+          <% groups.grua.forEach(function(r){ %>
+          <label class="check"><input type="checkbox" name="gruas" value="<%= r.id %>" <%= selected.gruas.indexOf(r.id)>=0?'checked':'' %>> <%= r.nombre %><%= r.identificador ? ' · '+r.identificador : '' %></label>
+          <% }); %>
+          <% if (!groups.grua.length) { %><div class="muted">No hay grúas cargadas.</div><% } %>
+        </div>
+      </div>
+      <div class="field-group">
+        <span class="field-group-title">Camiones asignados</span>
+        <div class="checks">
+          <% groups.camion.forEach(function(r){ %>
+          <label class="check"><input type="checkbox" name="camiones" value="<%= r.id %>" <%= selected.camiones.indexOf(r.id)>=0?'checked':'' %>> <%= r.nombre %><%= r.identificador ? ' · '+r.identificador : '' %></label>
+          <% }); %>
+          <% if (!groups.camion.length) { %><div class="muted">No hay camiones cargados.</div><% } %>
+        </div>
+      </div>
+      <div class="field-group">
+        <span class="field-group-title">Remolques asignados</span>
+        <div class="checks">
+          <% groups.remolque.forEach(function(r){ %>
+          <label class="check"><input type="checkbox" name="remolques" value="<%= r.id %>" <%= selected.remolques.indexOf(r.id)>=0?'checked':'' %>> <%= r.nombre %><%= r.identificador ? ' · '+r.identificador : '' %></label>
+          <% }); %>
+          <% if (!groups.remolque.length) { %><div class="muted">No hay remolques cargados.</div><% } %>
+        </div>
+      </div>
+      <div class="field-group">
+        <span class="field-group-title">Operarios asignados</span>
+        <div class="checks">
+          <% groups.operario.forEach(function(r){ %>
+          <label class="check"><input type="checkbox" name="operarios" value="<%= r.id %>" <%= selected.operarios.indexOf(r.id)>=0?'checked':'' %>> <%= r.nombre %></label>
+          <% }); %>
+          <% if (!groups.operario.length) { %><div class="muted">No hay operarios cargados.</div><% } %>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit"><%= isNew ? "Crear trabajo" : "Guardar cambios" %></button>
+        <a class="btn btn-ghost" href="/trabajos">Cancelar</a>
+      </div>
+    </form>
+
+    <% if (!isNew) { %>
+    <form method="post" action="/trabajos/<%= j.id %>/eliminar" class="delete-form" onsubmit="return confirm('¿Eliminar este trabajo? No se puede deshacer.');">
+      <button class="btn btn-danger" type="submit">Eliminar trabajo</button>
+    </form>
+    <% } %>
+  </div>
+</div>
+</body>
+</html>
