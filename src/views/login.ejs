@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Torre — Ingresar</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="wrap wrap-narrow">
+  <div class="login-card">
+    <div class="brand brand-center">
+      <h1>🏗️ Torre</h1>
+      <div class="tag">Ingresá para editar recursos, trabajos y fletes</div>
+    </div>
+    <% if (error) { %><div class="alert-error"><%= error %></div><% } %>
+    <form method="post" action="/login">
+      <input type="hidden" name="next" value="<%= next %>">
+      <label class="field">
+        <span>Contraseña</span>
+        <input type="password" name="password" autofocus required>
+      </label>
+      <button class="btn btn-primary btn-block" type="submit">Ingresar</button>
+    </form>
+    <a class="back-link" href="/recursos">← Volver sin ingresar</a>
+  </div>
+</div>
+</body>
+</html>
