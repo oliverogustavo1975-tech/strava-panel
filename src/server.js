@@ -1,8 +1,10 @@
 require("dotenv").config();
 const express = require("express");
 const path = require("path");
+const session = require("express-session");
 const db = require("./db");
 const { resourceStatus } = require("./lib/status");
+const { requireAuth, ADMIN_PASSWORD } = require("./lib/auth");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,6 +12,19 @@ const PORT = process.env.PORT || 3000;
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.static(path.join(__dirname, "..", "public")));
+app.use(express.urlencoded({ extended: false }));
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "torre-secret-dev",
+    resave: false,
+    saveUninitialized: false,
+    cookie: { maxAge: 1000 * 60 * 60 * 24 * 30 },
+  })
+);
+app.use((req, res, next) => {
+  res.locals.isAdmin = !!(req.session && req.session.isAdmin);
+  next();
+});
 
 const TIPOS = ["grua", "camion", "remolque", "operario"];
 const TIPO_LABEL_PL = { grua: "Grúas", camion: "Camiones", remolque: "Remolques", operario: "Operarios" };
@@ -31,6 +46,23 @@ function namesFor(ids, nameMap) {
 }
 
 app.get("/", (req, res) => res.redirect("/recursos"));
+
+app.get("/login", (req, res) => {
+  res.render("login", { error: null, next: req.query.next || "/recursos" });
+});
+
+app.post("/login", (req, res) => {
+  const next = req.body.next || "/recursos";
+  if (req.body.password && req.body.password === ADMIN_PASSWORD) {
+    req.session.isAdmin = true;
+    return res.redirect(next);
+  }
+  res.render("login", { error: "Contraseña incorrecta", next });
+});
+
+app.post("/logout", (req, res) => {
+  req.session.destroy(() => res.redirect("/recursos"));
+});
 
 app.get("/recursos", async (req, res, next) => {
   try {
@@ -63,6 +95,7 @@ app.get("/recursos", async (req, res, next) => {
     next(err);
   }
 });
+app.use("/recursos", require("./routes/recursos"));
 
 app.get("/trabajos", async (req, res, next) => {
   try {
@@ -90,6 +123,7 @@ app.get("/trabajos", async (req, res, next) => {
     next(err);
   }
 });
+app.use("/trabajos", require("./routes/trabajos"));
 
 app.get("/fletes", async (req, res, next) => {
   try {
@@ -117,6 +151,7 @@ app.get("/fletes", async (req, res, next) => {
     next(err);
   }
 });
+app.use("/fletes", require("./routes/fletes"));
 
 app.use((err, req, res, next) => {
   console.error(err);
