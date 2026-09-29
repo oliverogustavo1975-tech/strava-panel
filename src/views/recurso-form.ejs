@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Torre — <%= isNew ? "Nuevo recurso" : "Editar recurso" %></title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="wrap wrap-narrow">
+  <div class="form-card">
+    <h2><%= isNew ? "Nuevo recurso" : "Editar recurso" %></h2>
+    <form method="post" action="<%= isNew ? '/recursos' : '/recursos/' + r.id %>">
+      <label class="field">
+        <span>Tipo</span>
+        <select name="tipo" id="tipo" required>
+          <option value="grua" <%= r.tipo==='grua'?'selected':'' %>>Grúa</option>
+          <option value="camion" <%= r.tipo==='camion'?'selected':'' %>>Camión</option>
+          <option value="remolque" <%= r.tipo==='remolque'?'selected':'' %>>Remolque</option>
+          <option value="operario" <%= r.tipo==='operario'?'selected':'' %>>Operario</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Nombre</span>
+        <input type="text" name="nombre" value="<%= r.nombre || '' %>" required>
+      </label>
+      <label class="field">
+        <span>Identificador</span>
+        <input type="text" name="identificador" value="<%= r.identificador || '' %>">
+      </label>
+      <label class="field">
+        <span>País</span>
+        <select name="pais">
+          <option value="" <%= !r.pais?'selected':'' %>>Sin asignar</option>
+          <option value="uruguay" <%= r.pais==='uruguay'?'selected':'' %>>Uruguay</option>
+          <option value="argentina" <%= r.pais==='argentina'?'selected':'' %>>Argentina</option>
+          <option value="brasil" <%= r.pais==='brasil'?'selected':'' %>>Brasil</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Estado</span>
+        <select name="estado_base">
+          <option value="activo" <%= (r.estado_base||'activo')==='activo'?'selected':'' %>>Activo</option>
+          <option value="mantenimiento" <%= r.estado_base==='mantenimiento'?'selected':'' %>>Mantenimiento (equipo)</option>
+          <option value="licencia" <%= r.estado_base==='licencia'?'selected':'' %>>Licencia (persona)</option>
+          <option value="licencia_medica" <%= r.estado_base==='licencia_medica'?'selected':'' %>>Licencia médica (persona)</option>
+          <option value="seguro" <%= r.estado_base==='seguro'?'selected':'' %>>Seguro (persona)</option>
+          <option value="baja" <%= r.estado_base==='baja'?'selected':'' %>>Baja</option>
+        </select>
+      </label>
+
+      <div data-tipo="grua camion remolque">
+        <label class="field">
+          <span>Capacidad (t)</span>
+          <input type="number" step="0.1" name="capacidad_ton" value="<%= r.capacidad_ton ?? '' %>">
+        </label>
+      </div>
+      <div data-tipo="camion">
+        <label class="field">
+          <span>Tara (t)</span>
+          <input type="number" step="0.1" name="tara_ton" value="<%= r.tara_ton ?? '' %>">
+        </label>
+      </div>
+      <div data-tipo="remolque">
+        <label class="field">
+          <span>Tipo de remolque</span>
+          <input type="text" name="tipo_remolque" value="<%= r.tipo_remolque || '' %>">
+        </label>
+        <label class="field">
+          <span>Largo (m)</span>
+          <input type="number" step="0.1" name="largo_m" value="<%= r.largo_m ?? '' %>">
+        </label>
+      </div>
+      <div data-tipo="operario">
+        <label class="field">
+          <span>Especialidad</span>
+          <input type="text" name="especialidad" value="<%= r.especialidad || '' %>">
+        </label>
+      </div>
+
+      <label class="field">
+        <span>Ubicación (texto)</span>
+        <input type="text" name="ubicacion_texto" value="<%= r.ubicacion_texto || '' %>">
+      </label>
+      <label class="field">
+        <span>Ubicación (link de Maps)</span>
+        <input type="text" name="ubicacion_maps_url" value="<%= r.ubicacion_maps_url || '' %>">
+      </label>
+      <label class="field">
+        <span>Notas</span>
+        <textarea name="notas" rows="3"><%= r.notas || '' %></textarea>
+      </label>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit"><%= isNew ? "Crear recurso" : "Guardar cambios" %></button>
+        <a class="btn btn-ghost" href="/recursos">Cancelar</a>
+      </div>
+    </form>
+
+    <% if (!isNew) { %>
+    <form method="post" action="/recursos/<%= r.id %>/eliminar" class="delete-form" onsubmit="return confirm('¿Eliminar este recurso? No se puede deshacer.');">
+      <button class="btn btn-danger" type="submit">Eliminar recurso</button>
+    </form>
+    <% } %>
+  </div>
+</div>
+<script>
+  function syncTipo(){
+    var t = document.getElementById('tipo').value;
+    document.querySelectorAll('[data-tipo]').forEach(function(el){
+      var show = el.dataset.tipo.split(' ').indexOf(t) !== -1;
+      el.style.display = show ? '' : 'none';
+    });
+  }
+  document.getElementById('tipo').addEventListener('change', syncTipo);
+  syncTipo();
+</script>
+</body>
+</html>
