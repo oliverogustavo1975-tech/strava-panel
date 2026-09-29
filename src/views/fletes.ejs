@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Torre — Fletes</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <h1>Torre</h1>
+      <div class="tag">Fletes — traslados de componentes y equipos</div>
+    </div>
+    <nav class="nav">
+      <a class="nav-link" href="/recursos">Recursos</a>
+      <a class="nav-link" href="/trabajos">Trabajos</a>
+      <a class="nav-link active" href="/fletes">Fletes</a>
+    </nav>
+    <div class="gen-note">Actualizado: <%= generatedAt.toLocaleString("es-UY") %></div>
+  </div>
+
+  <div class="section-title">Fletes · <%= fletes.length %></div>
+  <% if (!fletes.length) { %>
+    <div class="empty">Todavía no hay fletes cargados.</div>
+  <% } %>
+
+  <div class="flete-list">
+    <% fletes.forEach(function(f){ %>
+    <div class="flete-card">
+      <div class="flete-top">
+        <div>
+          <div class="job-title"><%= f.componente || "Sin componente" %></div>
+          <div class="flete-sub"><%= f.cliente || "Sin cliente" %><%= f.trabajoTitulo ? " · " + f.trabajoTitulo : "" %></div>
+        </div>
+        <span class="pill pill-<%= f.llegado ? "disponible" : "ocupado" %>">
+          <span class="dot" style="background:currentColor"></span><%= f.llegado ? "Llegó" : "En tránsito / pendiente" %>
+        </span>
+      </div>
+      <div class="flete-route">
+        <span><%= f.origen_texto || "Origen sin definir" %></span>
+        <span class="arrow">→</span>
+        <span><%= f.destino_texto || "Destino sin definir" %></span>
+      </div>
+      <div class="flete-detail">
+        <span><strong>Fecha:</strong> <%= f.fecha ? new Date(f.fecha).toLocaleString("es-UY") : "Sin definir" %></span>
+        <% if (f.camionNombre) { %><span><strong>Camión:</strong> <%= f.camionNombre %></span><% } %>
+        <% if (f.remolqueNombre) { %><span><strong>Remolque:</strong> <%= f.remolqueNombre %></span><% } %>
+        <% if (f.choferNombre) { %><span><strong>Chofer:</strong> <%= f.choferNombre %></span><% } %>
+        <% if (f.necesita_grua && f.gruaNombre) { %><span><strong>Grúa:</strong> <%= f.gruaNombre %></span><% } %>
+        <% if (f.peso_carga_t) { %><span><strong>Peso:</strong> <%= f.peso_carga_t %> t</span><% } %>
+      </div>
+      <% if (f.notas) { %><div class="job-notas"><%= f.notas %></div><% } %>
+    </div>
+    <% }); %>
+  </div>
+</div>
+</body>
+</html>
