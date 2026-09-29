@@ -123,6 +123,21 @@
         <span>Fecha de llegada</span>
         <input type="datetime-local" name="fecha_llegada" value="<%= toInputLocal(f.fecha_llegada) %>">
       </label>
+      <div class="field-group">
+        <span class="field-group-title">Depósito</span>
+        <label class="check">
+          <input type="checkbox" name="a_deposito" value="on" <%= f.a_deposito?'checked':'' %>> Este flete va al depósito (al cargar la fecha de llegada, la pieza ingresa sola)
+        </label>
+        <label class="field">
+          <span>Sale del depósito (al cargar la fecha del flete, se da de baja sola)</span>
+          <select name="desde_deposito_id">
+            <option value="">No sale del depósito</option>
+            <% depositoItems.forEach(function(d){ %>
+            <option value="<%= d.id %>" <%= f.desde_deposito_id===d.id?'selected':'' %>><%= d.componente || 'Sin nombre' %><%= d.numero_serie ? ' · '+d.numero_serie : '' %><%= d.cliente ? ' · '+d.cliente : '' %></option>
+            <% }); %>
+          </select>
+        </label>
+      </div>
       <label class="field">
         <span>Nota de llegada</span>
         <input type="text" name="llegada_nota" value="<%= f.llegada_nota || '' %>">
