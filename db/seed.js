@@ -15,7 +15,10 @@ const json = v => JSON.stringify(v ?? []);
 async function main() {
   const raw = fs.readFileSync(path.join(__dirname, "seed-data.json"), "utf8");
   const data = JSON.parse(raw);
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
+  });
 
   try {
     let n;
