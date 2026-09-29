@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Torre — Trabajos</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <h1>Torre</h1>
+      <div class="tag">Trabajos — planificados, en curso y cerrados</div>
+    </div>
+    <nav class="nav">
+      <a class="nav-link" href="/recursos">Recursos</a>
+      <a class="nav-link active" href="/trabajos">Trabajos</a>
+      <a class="nav-link" href="/fletes">Fletes</a>
+    </nav>
+    <div class="gen-note">Actualizado: <%= generatedAt.toLocaleString("es-UY") %></div>
+  </div>
+
+  <% function jobCard(j) { %>
+    <div class="job-card">
+      <div class="job-top">
+        <div>
+          <div class="job-title"><%= j.titulo %></div>
+          <div class="job-sub"><%= j.cliente || "Sin cliente" %><%= j.ubicacion ? " · " + j.ubicacion : "" %></div>
+        </div>
+        <span class="pill pill-<%= j.estadoPill %>"><span class="dot" style="background:currentColor"></span><%= j.estadoLabel %></span>
+      </div>
+      <div class="job-meta">
+        <span><strong>Inicio:</strong> <%= j.fecha_inicio ? new Date(j.fecha_inicio).toLocaleString("es-UY") : "Sin definir" %></span>
+        <span><strong>Fin:</strong> <%= j.fecha_fin ? new Date(j.fecha_fin).toLocaleString("es-UY") : "Sin definir" %></span>
+        <% if (j.tonelaje_requerido) { %><span><strong>Tonelaje:</strong> <%= j.tonelaje_requerido %> t</span><% } %>
+        <% if (j.tipo_grua_requerida) { %><span><strong>Grúa requerida:</strong> <%= j.tipo_grua_requerida %></span><% } %>
+      </div>
+      <% var chips = [].concat(
+           j.gruasNombres.map(function(n){ return {n:n, k:"grúa"}; }),
+           j.camionesNombres.map(function(n){ return {n:n, k:"camión"}; }),
+           j.remolquesNombres.map(function(n){ return {n:n, k:"remolque"}; }),
+           j.operariosNombres.map(function(n){ return {n:n, k:"operario"}; })
+         ); %>
+      <% if (chips.length) { %>
+      <div class="job-resources">
+        <% chips.forEach(function(c){ %><span class="res-chip"><%= c.n %></span><% }); %>
+      </div>
+      <% } %>
+      <% if (j.notas_tecnicas) { %><div class="job-notas"><%= j.notas_tecnicas %></div><% } %>
+    </div>
+  <% } %>
+
+  <div class="section-title">Activos y pendientes · <%= activos.length %></div>
+  <% if (!activos.length) { %>
+    <div class="empty">No hay trabajos activos o pendientes.</div>
+  <% } %>
+  <div class="job-list">
+    <% activos.forEach(jobCard); %>
+  </div>
+
+  <% if (cerrados.length) { %>
+  <div class="section-title">Finalizados y cancelados · <%= cerrados.length %></div>
+  <div class="job-list">
+    <% cerrados.forEach(jobCard); %>
+  </div>
+  <% } %>
+</div>
+</body>
+</html>
