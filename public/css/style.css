@@ -1,3 +1,6 @@
+
+/* Fondo estático: sin animación */
+body{animation:none !important; background-attachment:fixed; background-position:center top;}
 :root{
   --bg:#EEF1F4; --surface:#FFFFFF; --surface-2:#E4E9ED; --border:#C9D2DA;
   --text:#182430; --text-muted:#5C6B7A;
