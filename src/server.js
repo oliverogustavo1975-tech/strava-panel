@@ -53,6 +53,9 @@ app.get("/login", (req, res) => {
 
 app.post("/login", (req, res) => {
   const next = req.body.next || "/recursos";
+  if (!ADMIN_PASSWORD) {
+    return res.render("login", { error: "Todavía no se configuró la contraseña en el servidor (variable ADMIN_PASSWORD en Render).", next });
+  }
   if (req.body.password && req.body.password === ADMIN_PASSWORD) {
     req.session.isAdmin = true;
     return res.redirect(next);
@@ -152,6 +155,17 @@ app.get("/fletes", async (req, res, next) => {
   }
 });
 app.use("/fletes", require("./routes/fletes"));
+
+app.get("/deposito", async (req, res, next) => {
+  try {
+    const { rows } = await db.query("SELECT * FROM deposito ORDER BY fecha_ingreso DESC NULLS LAST, created_at DESC");
+    const dentro = rows.filter(d => !d.fecha_egreso);
+    const salidos = rows.filter(d => d.fecha_egreso);
+    res.render("deposito", { dentro, salidos, generatedAt: new Date() });
+  } catch (err) {
+    next(err);
+  }
+});
 
 app.use((err, req, res, next) => {
   console.error(err);
