@@ -17,6 +17,19 @@ const PAISES = ["uruguay", "argentina", "brasil"];
 const PAIS_LABEL = { uruguay: "Uruguay", argentina: "Argentina", brasil: "Brasil", "": "Sin país asignado" };
 const PAIS_FLAG = { uruguay: "🇺🇾", argentina: "🇦🇷", brasil: "🇧🇷", "": "❔" };
 
+const ESTADO_JOB_LABEL = { pendiente: "Pendiente", en_curso: "En curso", finalizado: "Finalizado", cancelado: "Cancelado" };
+const ESTADO_JOB_PILL = { pendiente: "mantenimiento", en_curso: "ocupado", finalizado: "disponible", cancelado: "baja" };
+
+function buildNameMap(resources) {
+  const map = {};
+  for (const r of resources) map[r.id] = r.nombre;
+  return map;
+}
+
+function namesFor(ids, nameMap) {
+  return (ids || []).map(id => nameMap[id] || id);
+}
+
 app.get("/", (req, res) => res.redirect("/recursos"));
 
 app.get("/recursos", async (req, res, next) => {
@@ -46,6 +59,60 @@ app.get("/recursos", async (req, res, next) => {
     }).filter(g => g.resources.length);
 
     res.render("recursos", { TIPOS, TIPO_LABEL_PL, counts, byPais, generatedAt: new Date() });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get("/trabajos", async (req, res, next) => {
+  try {
+    const [{ rows: jobs }, { rows: resources }] = await Promise.all([
+      db.query("SELECT * FROM jobs ORDER BY fecha_inicio DESC"),
+      db.query("SELECT id, nombre FROM resources"),
+    ]);
+    const nameMap = buildNameMap(resources);
+
+    const withNames = jobs.map(j => ({
+      ...j,
+      estadoLabel: ESTADO_JOB_LABEL[j.estado] || j.estado,
+      estadoPill: ESTADO_JOB_PILL[j.estado] || "mantenimiento",
+      gruasNombres: namesFor(j.gruas, nameMap),
+      camionesNombres: namesFor(j.camiones, nameMap),
+      remolquesNombres: namesFor(j.remolques, nameMap),
+      operariosNombres: namesFor(j.operarios, nameMap),
+    }));
+
+    const activos = withNames.filter(j => j.estado === "pendiente" || j.estado === "en_curso");
+    const cerrados = withNames.filter(j => j.estado === "finalizado" || j.estado === "cancelado");
+
+    res.render("trabajos", { activos, cerrados, generatedAt: new Date() });
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get("/fletes", async (req, res, next) => {
+  try {
+    const [{ rows: fletes }, { rows: resources }, { rows: jobs }] = await Promise.all([
+      db.query("SELECT * FROM fletes ORDER BY fecha DESC NULLS FIRST, created_at DESC"),
+      db.query("SELECT id, nombre FROM resources"),
+      db.query("SELECT id, titulo FROM jobs"),
+    ]);
+    const nameMap = buildNameMap(resources);
+    const jobMap = {};
+    for (const j of jobs) jobMap[j.id] = j.titulo;
+
+    const withNames = fletes.map(f => ({
+      ...f,
+      camionNombre: f.camion_id ? (nameMap[f.camion_id] || f.camion_id) : null,
+      remolqueNombre: f.remolque_id ? (nameMap[f.remolque_id] || f.remolque_id) : null,
+      choferNombre: f.chofer_id ? (nameMap[f.chofer_id] || f.chofer_id) : null,
+      gruaNombre: f.grua_id ? (nameMap[f.grua_id] || f.grua_id) : null,
+      trabajoTitulo: f.trabajo_id ? (jobMap[f.trabajo_id] || f.trabajo_id) : null,
+      llegado: !!f.fecha_llegada,
+    }));
+
+    res.render("fletes", { fletes: withNames, generatedAt: new Date() });
   } catch (err) {
     next(err);
   }
