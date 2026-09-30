@@ -227,6 +227,33 @@ router.post("/mantenimiento/service/:id/eliminar", requireAuth, async (req, res,
   try { await db.query("DELETE FROM mantenimientos WHERE id=$1", [req.params.id]); res.redirect("/mantenimiento"); } catch (e) { next(e); }
 });
 
+/* ---------------- CONTROL DEL DEPÓSITO ---------------- */
+router.get("/deposito-control", requireAuth, async (req, res, next) => {
+  try {
+    const desc = "NULLIF(TRIM(COALESCE(f.cliente,'') || ' — ' || COALESCE(f.componente,'')), '—')";
+    const [rep, sin, sf, falta] = await Promise.all([
+      db.query(
+        "SELECT d.* FROM deposito d WHERE d.numero_serie IS NOT NULL AND TRIM(d.numero_serie) <> '' AND EXISTS (" +
+        " SELECT 1 FROM deposito o WHERE o.id <> d.id AND LOWER(TRIM(o.numero_serie)) = LOWER(TRIM(d.numero_serie)) AND LOWER(TRIM(COALESCE(o.componente,''))) = LOWER(TRIM(COALESCE(d.componente,''))))" +
+        " ORDER BY LOWER(d.numero_serie), d.fecha_ingreso"
+      ),
+      db.query(
+        "SELECT f.id AS flete_id, " + desc + " AS flete_desc, f.fecha, d.componente, d.numero_serie FROM fletes f JOIN deposito d ON d.id = f.desde_deposito_id WHERE d.fecha_egreso IS NULL ORDER BY f.fecha NULLS FIRST"
+      ),
+      db.query(
+        "SELECT d.* FROM deposito d WHERE d.fecha_egreso IS NOT NULL AND (d.flete_egreso_id IS NULL OR NOT EXISTS (SELECT 1 FROM fletes f WHERE f.id = d.flete_egreso_id)) ORDER BY d.fecha_egreso DESC"
+      ),
+      db.query(
+        "SELECT f.id, " + desc + " AS flete_desc, f.componente, f.numero_serie, f.fecha_llegada FROM fletes f WHERE f.a_deposito AND f.fecha_llegada IS NOT NULL AND (f.deposito_ingreso_id IS NULL OR NOT EXISTS (SELECT 1 FROM deposito d WHERE d.id = f.deposito_ingreso_id)) ORDER BY f.fecha_llegada DESC"
+      ),
+    ]);
+    res.render("deposito-control", {
+      titulo: "Control del depósito", tag: "Revisión de entradas y salidas", activo: "deposito", ruta: "/deposito-control",
+      repetidas: rep.rows, sinSalir: sin.rows, salidaSinFlete: sf.rows, ingresoFaltante: falta.rows,
+    });
+  } catch (e) { next(e); }
+});
+
 /* ---------------- CALCULADORA ---------------- */
 router.get("/calculadora", (req, res) => {
   res.render("calculadora", { titulo: "Calculadora", tag: "Cuentas rápidas de logística", activo: "calculadora", ruta: "/calculadora" });
