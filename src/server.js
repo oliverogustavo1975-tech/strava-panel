@@ -156,6 +156,8 @@ app.get("/fletes", async (req, res, next) => {
 });
 app.use("/fletes", require("./routes/fletes"));
 
+app.use("/personal", require("./routes/personal"));
+
 app.get("/deposito", async (req, res, next) => {
   try {
     const { rows } = await db.query("SELECT * FROM deposito ORDER BY fecha_ingreso DESC NULLS LAST, created_at DESC");
