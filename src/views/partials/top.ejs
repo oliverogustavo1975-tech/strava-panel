@@ -24,11 +24,11 @@
       <a class="nav-link" href="/trabajos">Trabajos</a>
       <a class="nav-link" href="/fletes">Fletes</a>
       <a class="nav-link" href="/deposito">Depósito</a>
-      <a class="nav-link" href="/personal">Personal</a>
+      <a class="nav-link<%= activo==='otros'?' active':'' %>" href="/otros">Otros</a>
+      <a class="nav-link<%= activo==='calculadora'?' active':'' %>" href="/calculadora">Calculadora</a>
       <a class="nav-link<%= activo==='costos'?' active':'' %>" href="/costos">Costos</a>
       <a class="nav-link<%= activo==='mantenimiento'?' active':'' %>" href="/mantenimiento">Mantenimiento</a>
-      <a class="nav-link<%= activo==='calculadora'?' active':'' %>" href="/calculadora">Calculadora</a>
-      <a class="nav-link<%= activo==='otros'?' active':'' %>" href="/otros">Otros</a>
+      <a class="nav-link<%= activo==='personal'?' active':'' %>" href="/personal">Personal</a>
       <a class="nav-link<%= activo==='config'?' active':'' %>" href="/config">Configuración</a>
       <a class="nav-link<%= activo==='respaldo'?' active':'' %>" href="/respaldo">Respaldo</a>
     </nav>
