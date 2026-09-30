@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Torre — <%= titulo %></title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <h1>🏗️ Torre</h1>
+      <div class="tag"><%= tag %></div>
+    </div>
+    <nav class="nav">
+      <a class="nav-link<%= activo==='inicio'?' active':'' %>" href="/inicio">Inicio</a>
+      <a class="nav-link" href="/recursos">Recursos</a>
+      <a class="nav-link" href="/trabajos">Trabajos</a>
+      <a class="nav-link" href="/fletes">Fletes</a>
+      <a class="nav-link" href="/deposito">Depósito</a>
+      <a class="nav-link" href="/personal">Personal</a>
+      <a class="nav-link<%= activo==='costos'?' active':'' %>" href="/costos">Costos</a>
+      <a class="nav-link<%= activo==='mantenimiento'?' active':'' %>" href="/mantenimiento">Mantenimiento</a>
+      <a class="nav-link<%= activo==='calculadora'?' active':'' %>" href="/calculadora">Calculadora</a>
+    </nav>
+    <div class="topbar-actions">
+      <% if (isAdmin) { %>
+        <form method="post" action="/logout" class="inline-form"><button class="btn btn-ghost btn-sm" type="submit">Salir</button></form>
+      <% } else { %>
+        <a class="btn btn-ghost btn-sm" href="/login?next=<%= encodeURIComponent(ruta || '/inicio') %>">Ingresar</a>
+      <% } %>
+    </div>
+    <div class="gen-note">Actualizado: <%= new Date().toLocaleString("es-UY") %></div>
+  </div>
