@@ -18,6 +18,7 @@
       <a class="nav-link" href="/trabajos">Trabajos</a>
       <a class="nav-link" href="/fletes">Fletes</a>
       <a class="nav-link active" href="/deposito">Depósito</a>
+      <a class="nav-link" href="/personal">Personal</a>
     </nav>
     <div class="topbar-actions">
       <% if (isAdmin) { %>
@@ -39,7 +40,8 @@
           <div class="job-title"><%= d.componente || "Sin nombre" %></div>
           <div class="flete-sub"><%= d.cliente || "Sin cliente" %><%= d.numero_serie ? " · Serie " + d.numero_serie : "" %></div>
         </div>
-        <span class="pill pill-disponible"><span class="dot" style="background:currentColor"></span>En depósito</span>
+        <div class="res-top-right"><span class="pill pill-disponible"><span class="dot" style="background:currentColor"></span>En depósito</span>
+          <% if (isAdmin) { %><a class="edit-link" href="/fletes/nuevo?desde_deposito=<%= d.id %>">Crear flete</a><% } %></div>
       </div>
       <div class="flete-detail">
         <span><strong>Ingresó:</strong> <%= d.fecha_ingreso ? new Date(d.fecha_ingreso).toLocaleString("es-UY") : "Sin fecha" %></span>
