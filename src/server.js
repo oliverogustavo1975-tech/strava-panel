@@ -27,7 +27,8 @@ app.use((req, res, next) => {
 });
 
 // Agrega al menú de las páginas viejas los links nuevos (Inicio, Costos, Mantenimiento, Calculadora)
-const NAV_EXTRA = '<a class="nav-link" href="/costos">Costos</a><a class="nav-link" href="/mantenimiento">Mantenimiento</a><a class="nav-link" href="/calculadora">Calculadora</a><a class="nav-link" href="/otros">Otros</a><a class="nav-link" href="/config">Configuración</a><a class="nav-link" href="/respaldo">Respaldo</a>';
+const NAV_PRE = '<a class="nav-link" href="/otros">Otros</a><a class="nav-link" href="/calculadora">Calculadora</a><a class="nav-link" href="/costos">Costos</a><a class="nav-link" href="/mantenimiento">Mantenimiento</a>';
+const NAV_POST = '<a class="nav-link" href="/config">Configuración</a><a class="nav-link" href="/respaldo">Respaldo</a>';
 app.use((req, res, next) => {
   const render = res.render.bind(res);
   res.render = (view, opts, cb) => {
@@ -36,7 +37,7 @@ app.use((req, res, next) => {
       if (err) return cb ? cb(err) : next(err);
       if (!html.includes('href="/costos"')) {
         html = html.replace(/(<a class="nav-link[^"]*" href="\/recursos">)/, '<a class="nav-link" href="/inicio">Inicio</a>$1')
-                   .replace(/(<a class="nav-link[^"]*" href="\/personal">Personal<\/a>)/, "$1" + NAV_EXTRA);
+                   .replace(/(<a class="nav-link[^"]*" href="\/personal">Personal<\/a>)/, NAV_PRE + "$1" + NAV_POST);
       }
       return cb ? cb(null, html) : res.send(html);
     });
