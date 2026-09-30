@@ -208,3 +208,24 @@ CREATE TABLE IF NOT EXISTS mantenimientos (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS mant_recurso_idx ON mantenimientos(recurso_id);
+
+-- ===== Configuración: tipos de recurso propios (lanchas, vacas, caramelos…) =====
+CREATE TABLE IF NOT EXISTS tipos_custom (
+  id         text PRIMARY KEY,
+  nombre     text NOT NULL,
+  plural     text,
+  icono      text,
+  campos     jsonb NOT NULL DEFAULT '[]',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS items_custom (
+  id         text PRIMARY KEY,
+  tipo_id    text NOT NULL REFERENCES tipos_custom(id) ON DELETE CASCADE,
+  nombre     text NOT NULL,
+  estado     text NOT NULL DEFAULT 'disponible',
+  datos      jsonb NOT NULL DEFAULT '{}',
+  notas      text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS items_custom_tipo_idx ON items_custom(tipo_id);
