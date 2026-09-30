@@ -18,6 +18,7 @@
       <a class="nav-link" href="/trabajos">Trabajos</a>
       <a class="nav-link active" href="/fletes">Fletes</a>
       <a class="nav-link" href="/deposito">Depósito</a>
+      <a class="nav-link" href="/personal">Personal</a>
     </nav>
     <div class="topbar-actions">
       <% if (isAdmin) { %>
@@ -47,7 +48,8 @@
           <span class="pill pill-<%= f.llegado ? "disponible" : "ocupado" %>">
             <span class="dot" style="background:currentColor"></span><%= f.llegado ? "Llegó" : "En tránsito / pendiente" %>
           </span>
-          <% if (isAdmin) { %><a class="edit-link" href="/fletes/<%= f.id %>/editar">Editar</a><% } %>
+          <% if (isAdmin) { %><a class="edit-link" href="/fletes/<%= f.id %>/editar">Editar</a> <a class="edit-link" href="/fletes/nuevo?copiar=<%= f.id %>">Duplicar</a>
+          <% if (!f.deposito_ingreso_id) { %><form method="post" action="/fletes/<%= f.id %>/copiar-deposito" class="inline-form"><button class="edit-link linkbtn" type="submit">Copiar al depósito</button></form><% } %><% } %>
         </div>
       </div>
       <div class="flete-route">
