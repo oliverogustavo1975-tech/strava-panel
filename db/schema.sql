@@ -168,3 +168,43 @@ CREATE INDEX IF NOT EXISTS horas_persona_idx ON horas(persona_id);
 ALTER TABLE fletes ADD COLUMN IF NOT EXISTS km_recorridos numeric;
 ALTER TABLE fletes ADD COLUMN IF NOT EXISTS combustible_litros numeric;
 ALTER TABLE fletes ADD COLUMN IF NOT EXISTS combustible_costo numeric;
+
+-- ===== Costos, mantenimiento y vencimientos =====
+CREATE TABLE IF NOT EXISTS tarifas (
+  recurso_id  text PRIMARY KEY,
+  costo_hora  numeric,
+  costo_km    numeric,
+  updated_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS finanzas (
+  tipo         text NOT NULL,            -- 'flete' | 'trabajo'
+  ref_id       text NOT NULL,
+  precio       numeric,
+  otros_gastos numeric,
+  updated_at   timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (tipo, ref_id)
+);
+CREATE TABLE IF NOT EXISTS config (
+  clave text PRIMARY KEY,
+  valor text
+);
+CREATE TABLE IF NOT EXISTS vencimientos (
+  id         text PRIMARY KEY,
+  recurso_id text,
+  concepto   text NOT NULL,
+  fecha      date NOT NULL,
+  notas      text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS venc_fecha_idx ON vencimientos(fecha);
+CREATE TABLE IF NOT EXISTS mantenimientos (
+  id         text PRIMARY KEY,
+  recurso_id text NOT NULL,
+  fecha      date NOT NULL,
+  tipo       text,
+  km         numeric,
+  costo      numeric,
+  notas      text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS mant_recurso_idx ON mantenimientos(recurso_id);
