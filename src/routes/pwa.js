@@ -90,8 +90,8 @@ router.get("/icon.png", (req, res) => {
 
 router.get("/manifest.webmanifest", (req, res) => {
   res.type("application/manifest+json").send(JSON.stringify({
-    name: "Torre",
-    short_name: "Torre",
+    name: "Central de Operaciones",
+    short_name: "Central",
     start_url: "/inicio",
     scope: "/",
     display: "standalone",
