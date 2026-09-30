@@ -1,4 +1,30 @@
 <%- include('partials/top', {titulo, tag, activo, ruta}) %>
+<%
+  var tiles = [
+    ['/recursos','🏗️','Recursos',''],
+    ['/trabajos','📋','Trabajos',''],
+    ['/fletes','🚚','Fletes', enEspera ? enEspera + ' sin fecha' : ''],
+    ['/deposito','🏭','Depósito', deposito ? String(deposito) : '', 'ok'],
+    ['/personal','👷','Personal',''],
+    ['/costos','💰','Costos',''],
+    ['/mantenimiento','🔧','Mantenimiento', venc.length ? (venc.length >= 8 ? '8+' : String(venc.length)) : ''],
+    ['/calculadora','🧮','Calculadora',''],
+    ['/otros','📦','Otros',''],
+    ['/config','⚙️','Configuración',''],
+    ['/respaldo','💾','Respaldo','']
+  ];
+%>
+<div class="quick">
+  <a class="btn btn-primary" href="/fletes/nuevo">+ Flete</a>
+  <a class="btn btn-primary" href="/trabajos/nuevo">+ Trabajo</a>
+  <a class="btn btn-primary" href="/personal/nuevo">+ Horas</a>
+</div>
+<div class="apphome">
+  <% tiles.forEach(function(t){ %>
+  <a class="tile" href="<%= t[0] %>"><span class="ico"><%= t[1] %></span><span class="lbl"><%= t[2] %></span><% if (t[3]) { %><span class="badge<%= t[4] ? ' ok' : '' %>"><%= t[3] %></span><% } %></a>
+  <% }); %>
+</div>
+<div class="section-title">Hoy</div>
 <div class="stats">
   <% [['grua','Grúas'],['camion','Camiones'],['remolque','Remolques'],['operario','Personal']].forEach(function(t){ var c = cuentas[t[0]]; %>
   <div class="stat-card"><div class="k"><%= t[1] %></div><div class="v"><%= c.libres %> <span class="total">libres de <%= c.total %></span></div>
