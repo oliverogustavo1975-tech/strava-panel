@@ -1,0 +1,57 @@
+<%- include('partials/top', {titulo, tag, activo, ruta}) %>
+<div class="stats">
+  <% [['grua','Grúas'],['camion','Camiones'],['remolque','Remolques'],['operario','Personal']].forEach(function(t){ var c = cuentas[t[0]]; %>
+  <div class="stat-card"><div class="k"><%= t[1] %></div><div class="v"><%= c.libres %> <span class="total">libres de <%= c.total %></span></div>
+    <div class="muted-line"><%= c.ocupados %> en trabajo · <%= c.fuera %> fuera de servicio</div></div>
+  <% }); %>
+</div>
+
+<div class="stats">
+  <div class="stat-card"><div class="k">Fletes sin fecha</div><div class="v"><%= enEspera %></div></div>
+  <div class="stat-card"><div class="k">Fletes en camino</div><div class="v"><%= enCamino %></div></div>
+  <div class="stat-card"><div class="k">En depósito</div><div class="v"><%= deposito %></div></div>
+  <div class="stat-card"><div class="k">Horas del mes</div><div class="v"><%= horasMes.h + horasMes.e %> <span class="total"><%= horasMes.dias %> días con trabajo</span></div></div>
+</div>
+
+<div class="cards2">
+  <div class="panel">
+    <div class="section-title">⚠ Vencimientos (próximos 30 días)</div>
+    <% if (!venc.length) { %><div class="empty">Nada vence en los próximos 30 días.</div><% } else { %>
+    <table class="tabla"><tbody>
+      <% venc.forEach(function(v){ var d = Number(v.dias); %>
+      <tr><td><%= v.concepto %></td><td><%= v.recurso || '—' %></td>
+        <td class="<%= d<0?'venc-vencido':(d<=15?'venc-pronto':'') %>"><%= v.fecha_s.split('-').reverse().join('/') %> · <%= d<0 ? 'vencido hace '+(-d)+' d' : (d===0?'vence hoy':'en '+d+' d') %></td></tr>
+      <% }); %>
+    </tbody></table>
+    <% } %>
+    <div style="margin-top:8px"><a class="edit-link" href="/mantenimiento">Ver todos →</a></div>
+  </div>
+
+  <div class="panel">
+    <div class="section-title">🏗 Trabajos activos hoy</div>
+    <% if (!trabajosHoy.length) { %><div class="empty">Sin trabajos activos.</div><% } else { %>
+    <table class="tabla"><tbody>
+      <% trabajosHoy.forEach(function(j){ %>
+      <tr><td><strong><%= j.titulo %></strong><br><span class="muted"><%= j.cliente || '' %></span></td>
+        <td><%= j.gruasN.concat(j.camionesN).join(', ') || '—' %></td></tr>
+      <% }); %>
+    </tbody></table>
+    <% } %>
+    <div style="margin-top:8px"><a class="edit-link" href="/trabajos">Ver trabajos →</a></div>
+  </div>
+
+  <div class="panel">
+    <div class="section-title">🚚 Fletes de hoy</div>
+    <% if (!fletesHoy.length) { %><div class="empty">Sin fletes programados para hoy.</div><% } else { %>
+    <table class="tabla"><tbody>
+      <% fletesHoy.forEach(function(f){ %>
+      <tr><td><strong><%= f.componente %></strong><br><span class="muted"><%= f.cliente || '' %></span></td>
+        <td><%= f.camionN || 'sin camión' %><br><span class="muted"><%= f.choferN || '' %></span></td>
+        <td><%= f.fecha_llegada ? '✅ llegó' : '' %></td></tr>
+      <% }); %>
+    </tbody></table>
+    <% } %>
+    <div style="margin-top:8px"><a class="edit-link" href="/fletes">Ver fletes →</a></div>
+  </div>
+</div>
+<%- include('partials/bottom') %>
