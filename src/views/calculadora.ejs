@@ -1,0 +1,88 @@
+<%- include('partials/top', {titulo, tag, activo, ruta}) %>
+<div class="notice">Cuentas rápidas: escribís los números y el resultado aparece solo. No se guarda nada. Son estimaciones para decidir; los límites legales y del fabricante mandan siempre.</div>
+<div class="cards2">
+
+  <div class="panel calc" id="c1">
+    <div class="section-title">1 · ¿Entra la carga en el camión?</div>
+    <label>Tara del camión (t) <input data-k="tc" inputmode="decimal"></label>
+    <label>Tara del remolque (t) <input data-k="tr" inputmode="decimal"></label>
+    <label>Peso bruto máximo del conjunto, PBTC (t) <input data-k="pb" inputmode="decimal"></label>
+    <label>Peso de la carga (t) <input data-k="pc" inputmode="decimal"></label>
+    <div class="calc-out" data-out></div>
+  </div>
+
+  <div class="panel calc" id="c2">
+    <div class="section-title">2 · Costo de un viaje y precio sugerido</div>
+    <label>Km del viaje (ida y vuelta si vuelve vacío) <input data-k="km" inputmode="decimal"></label>
+    <label>Consumo del camión (litros cada 100 km) <input data-k="cons" inputmode="decimal" placeholder="ej: 45"></label>
+    <label>Precio del litro <input data-k="pl" inputmode="decimal"></label>
+    <label>Desgaste por km (gomas, service) <input data-k="des" inputmode="decimal"></label>
+    <label>Horas del chofer <input data-k="hs" inputmode="decimal"></label>
+    <label>Costo por hora del chofer <input data-k="ch" inputmode="decimal"></label>
+    <label>Peajes y otros gastos <input data-k="ot" inputmode="decimal"></label>
+    <label>Ganancia que querés sobre el costo (%) <input data-k="mg" inputmode="decimal" value="25"></label>
+    <div class="calc-out" data-out></div>
+  </div>
+
+  <div class="panel calc" id="c3">
+    <div class="section-title">3 · Punto de equilibrio de una grúa</div>
+    <label>Costo fijo por mes (cuota, seguro, patente, sueldo fijo…) <input data-k="cf" inputmode="decimal"></label>
+    <label>Costo por hora trabajada (combustible, mantenimiento, operario extra) <input data-k="cv" inputmode="decimal"></label>
+    <label>Lo que cobrás por hora <input data-k="tf" inputmode="decimal"></label>
+    <label>Horas por día que trabaja <input data-k="hd" inputmode="decimal" value="8"></label>
+    <div class="calc-out" data-out></div>
+  </div>
+
+  <div class="panel calc" id="c4">
+    <div class="section-title">4 · ¿Conviene seguir arreglando o cambiar el equipo?</div>
+    <label>Gasto de reparaciones del último año <input data-k="rep" inputmode="decimal"></label>
+    <label>Cuánto cuesta uno equivalente <input data-k="nuevo" inputmode="decimal"></label>
+    <label>Cuánto podrías vender el actual <input data-k="vta" inputmode="decimal"></label>
+    <div class="calc-out" data-out></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  function val(box, k){ var el = box.querySelector('[data-k="'+k+'"]'); if(!el) return NaN; var s = el.value.replace(',','.'); return s.trim()===''?NaN:Number(s); }
+  function f(n, d){ return n.toLocaleString('es-UY',{minimumFractionDigits:d||0, maximumFractionDigits:d===undefined?0:d}); }
+  var calcs = {
+    c1: function(v){
+      if (isNaN(v.pc)) return 'Escribí el peso de la carga.';
+      if (isNaN(v.pb)) return 'Falta el PBTC (peso bruto máximo).';
+      var tara = (v.tc||0)+(v.tr||0), disp = v.pb - tara, sob = v.pc - disp;
+      var h = 'Tara del conjunto: <b>'+f(tara,1)+' t</b><br>Carga máxima que admite: <b>'+f(disp,1)+' t</b><br>';
+      h += sob > 0 ? '<span class="venc-vencido">⛔ Sobrepeso: excede '+f(sob,1)+' t.</span>' : '<span class="margen-ok">✔ Entra. Sobran '+f(-sob,1)+' t.</span>';
+      h += '<br>Peso total con carga: <b>'+f(tara+v.pc,1)+' t</b>';
+      if (tara+v.pc > 45 || v.pc > 45) h += '<br><span class="venc-pronto">🚨 Revisá si necesita permiso especial (más de 45 t).</span>';
+      return h;
+    },
+    c2: function(v){
+      if (isNaN(v.km)) return 'Escribí los km del viaje.';
+      var lit = isNaN(v.cons)?0:v.km*v.cons/100, comb = lit*(v.pl||0), des = v.km*(v.des||0), per = (v.hs||0)*(v.ch||0), ot = v.ot||0;
+      var tot = comb+des+per+ot, mg = isNaN(v.mg)?0:v.mg, precio = tot*(1+mg/100);
+      return 'Litros: <b>'+f(lit,1)+'</b> · Combustible: <b>'+f(comb)+'</b><br>Desgaste: <b>'+f(des)+'</b> · Chofer: <b>'+f(per)+'</b> · Otros: <b>'+f(ot)+'</b><br>Costo total: <b>'+f(tot)+'</b> ('+f(v.km?tot/v.km:0,2)+' por km)<br>Precio sugerido con '+f(mg)+'% de ganancia: <b>'+f(precio)+'</b><br>Ganancia: <b>'+f(precio-tot)+'</b>';
+    },
+    c3: function(v){
+      if (isNaN(v.cf) || isNaN(v.tf)) return 'Completá costo fijo y lo que cobrás por hora.';
+      var cont = v.tf - (v.cv||0);
+      if (cont <= 0) return '<span class="venc-vencido">Con esos números cada hora trabajada pierde plata (cobrás menos que lo que cuesta).</span>';
+      var horas = v.cf/cont, hd = v.hd>0?v.hd:8;
+      return 'Ganás <b>'+f(cont,2)+'</b> por cada hora trabajada.<br>Para pagar los costos fijos necesitás <b>'+f(horas,1)+' horas</b> al mes = <b>'+f(horas/hd,1)+' días</b> de trabajo.<br>Cada hora después de eso es ganancia.';
+    },
+    c4: function(v){
+      if (isNaN(v.rep) || isNaN(v.nuevo)) return 'Completá reparaciones y precio de uno equivalente.';
+      var neto = v.nuevo - (v.vta||0), ratio = v.rep/neto*100;
+      var h = 'Cambiarlo te costaría neto: <b>'+f(neto)+'</b>.<br>Lo que gastás por año en arreglos es el <b>'+f(ratio)+'%</b> de eso.<br>';
+      h += ratio >= 50 ? '<span class="venc-pronto">⚠ Ya es mucho: conviene ir analizando el reemplazo.</span>' : '<span class="margen-ok">Todavía conviene seguir arreglándolo.</span>';
+      return h + '<br><span class="muted">Regla práctica; no incluye días parado ni riesgo de falla.</span>';
+    }
+  };
+  Object.keys(calcs).forEach(function(id){
+    var box = document.getElementById(id);
+    function run(){ var v = {}; box.querySelectorAll('[data-k]').forEach(function(el){ v[el.getAttribute('data-k')] = val(box, el.getAttribute('data-k')); }); box.querySelector('[data-out]').innerHTML = calcs[id](v); }
+    box.addEventListener('input', run); run();
+  });
+})();
+</script>
+<%- include('partials/bottom') %>
