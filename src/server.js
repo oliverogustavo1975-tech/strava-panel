@@ -27,7 +27,7 @@ app.use((req, res, next) => {
 });
 
 // Agrega al menú de las páginas viejas los links nuevos (Inicio, Costos, Mantenimiento, Calculadora)
-const NAV_EXTRA = '<a class="nav-link" href="/costos">Costos</a><a class="nav-link" href="/mantenimiento">Mantenimiento</a><a class="nav-link" href="/calculadora">Calculadora</a><a class="nav-link" href="/otros">Otros</a><a class="nav-link" href="/config">Configuración</a>';
+const NAV_EXTRA = '<a class="nav-link" href="/costos">Costos</a><a class="nav-link" href="/mantenimiento">Mantenimiento</a><a class="nav-link" href="/calculadora">Calculadora</a><a class="nav-link" href="/otros">Otros</a><a class="nav-link" href="/config">Configuración</a><a class="nav-link" href="/respaldo">Respaldo</a>';
 app.use((req, res, next) => {
   const render = res.render.bind(res);
   res.render = (view, opts, cb) => {
@@ -178,6 +178,7 @@ app.use("/fletes", require("./routes/fletes"));
 app.use("/personal", require("./routes/personal"));
 app.use("/", require("./routes/extra")); // inicio, costos, mantenimiento, calculadora
 app.use("/", require("./routes/config")); // configuración y otros recursos
+app.use("/", require("./routes/respaldo")); // descargas CSV
 
 app.get("/deposito", async (req, res, next) => {
   try {
