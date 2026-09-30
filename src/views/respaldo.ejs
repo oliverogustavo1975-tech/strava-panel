@@ -1,0 +1,12 @@
+<%- include('partials/top', {titulo, tag, activo, ruta}) %>
+<div class="notice">Descargá tus datos en un archivo que se abre directo en Excel. Conviene bajar una copia de vez en cuando (por ejemplo, una vez por mes) como respaldo propio. Hace falta haber entrado con la clave.</div>
+<% if (!isAdmin) { %><div class="notice venc-pronto">Para descargar tenés que <a href="/login?next=/respaldo">ingresar con la clave</a>.</div><% } %>
+<div class="cards2">
+  <% Object.keys(EXPORTS).forEach(function(k){ %>
+  <div class="panel" style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+    <strong><%= EXPORTS[k].titulo %></strong>
+    <a class="btn btn-primary btn-sm" href="/respaldo/<%= k %>.csv">⬇ Descargar</a>
+  </div>
+  <% }); %>
+</div>
+<%- include('partials/bottom') %>
