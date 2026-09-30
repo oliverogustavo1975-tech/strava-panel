@@ -5,18 +5,18 @@
     ['/trabajos','📋','Trabajos',''],
     ['/fletes','🚚','Fletes', enEspera ? enEspera + ' sin fecha' : ''],
     ['/deposito','🏭','Depósito', deposito ? String(deposito) : '', 'ok'],
-    ['/personal','👷','Personal',''],
+    ['/otros','📦','Otros',''],
+    ['/calculadora','🧮','Calculadora',''],
     ['/costos','💰','Costos',''],
     ['/mantenimiento','🔧','Mantenimiento', venc.length ? (venc.length >= 8 ? '8+' : String(venc.length)) : ''],
-    ['/calculadora','🧮','Calculadora',''],
-    ['/otros','📦','Otros',''],
+    ['/personal','👷','Personal y horas',''],
     ['/config','⚙️','Configuración',''],
     ['/respaldo','💾','Respaldo','']
   ];
 %>
 <div class="quick">
-  <a class="btn btn-primary" href="/fletes/nuevo">+ Flete</a>
   <a class="btn btn-primary" href="/trabajos/nuevo">+ Trabajo</a>
+  <a class="btn btn-primary" href="/fletes/nuevo">+ Flete</a>
   <a class="btn btn-primary" href="/personal/nuevo">+ Horas</a>
 </div>
 <div class="apphome">
