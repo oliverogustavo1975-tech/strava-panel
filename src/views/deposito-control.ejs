@@ -1,0 +1,37 @@
+<%- include('partials/top', {titulo, tag, activo, ruta}) %>
+<% var fd = function(d){ return d ? new Date(d).toLocaleDateString("es-UY") : "—"; }; %>
+<div class="notice">Esta pantalla revisa si hay piezas que figuran como salidas y a la vez siguen en el stock del depósito. Si todas las listas están vacías, está todo en orden.</div>
+
+<div class="panel">
+  <h3>1. Piezas repetidas (misma pieza y número de serie cargada más de una vez)</h3>
+  <% if (!repetidas.length) { %><p class="muted">Sin casos. ✔</p><% } else { %>
+  <table class="tabla"><tr><th>Pieza</th><th>N° serie</th><th>Ingresó</th><th>Estado</th></tr>
+  <% repetidas.forEach(function(r){ %><tr><td><%= r.componente %></td><td><%= r.numero_serie %></td><td><%= fd(r.fecha_ingreso) %></td><td><%= r.fecha_egreso ? "Salió " + fd(r.fecha_egreso) : "En stock" %></td></tr><% }); %></table>
+  <p class="muted">Si una figura "Salió" y otra "En stock", es la misma pieza duplicada: hay que borrar la que sobra.</p>
+  <% } %>
+</div>
+
+<div class="panel">
+  <h3>2. Fletes de salida cuya pieza sigue en stock</h3>
+  <% if (!sinSalir.length) { %><p class="muted">Sin casos. ✔</p><% } else { %>
+  <table class="tabla"><tr><th>Flete</th><th>Pieza</th><th>N° serie</th><th>Fecha del flete</th><th>Motivo</th></tr>
+  <% sinSalir.forEach(function(r){ %><tr><td><a href="/fletes/<%= r.flete_id %>/editar"><%= r.flete_desc || r.flete_id %></a></td><td><%= r.componente %></td><td><%= r.numero_serie || "—" %></td><td><%= fd(r.fecha) %></td><td><%= r.fecha ? "Tiene fecha pero no se aplicó la salida" : "El flete no tiene fecha: la pieza sale cuando se pone la fecha" %></td></tr><% }); %></table>
+  <% } %>
+</div>
+
+<div class="panel">
+  <h3>3. Piezas marcadas como salidas sin un flete que lo respalde</h3>
+  <% if (!salidaSinFlete.length) { %><p class="muted">Sin casos. ✔</p><% } else { %>
+  <table class="tabla"><tr><th>Pieza</th><th>N° serie</th><th>Salió</th></tr>
+  <% salidaSinFlete.forEach(function(r){ %><tr><td><%= r.componente %></td><td><%= r.numero_serie || "—" %></td><td><%= fd(r.fecha_egreso) %></td></tr><% }); %></table>
+  <% } %>
+</div>
+
+<div class="panel">
+  <h3>4. Fletes que deberían haber ingresado una pieza y no figura en el depósito</h3>
+  <% if (!ingresoFaltante.length) { %><p class="muted">Sin casos. ✔</p><% } else { %>
+  <table class="tabla"><tr><th>Flete</th><th>Pieza</th><th>N° serie</th><th>Llegada</th></tr>
+  <% ingresoFaltante.forEach(function(r){ %><tr><td><a href="/fletes/<%= r.id %>/editar"><%= r.flete_desc || r.id %></a></td><td><%= r.componente %></td><td><%= r.numero_serie || "—" %></td><td><%= fd(r.fecha_llegada) %></td></tr><% }); %></table>
+  <% } %>
+</div>
+<%- include('partials/bottom') %>
