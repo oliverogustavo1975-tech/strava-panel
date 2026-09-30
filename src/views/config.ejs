@@ -1,0 +1,49 @@
+<%- include('partials/top', {titulo, tag, activo, ruta}) %>
+<div class="notice">Acá creás tus propios tipos de recurso (lanchas, vacas, caramelos, trenes…) y elegís qué datos querés anotar de cada uno. Después cargás las fichas en <a href="/otros">Otros recursos</a>. Las grúas, camiones, remolques y operarios siguen funcionando como siempre.</div>
+<% if (msg) { %><div class="notice venc-pronto"><%= msg %></div><% } %>
+
+<% if (isAdmin) { %>
+<div class="section-title">Nuevo tipo de recurso</div>
+<form method="post" action="/config/tipo" class="filtro-form">
+  <label>Nombre (uno) <input name="nombre" required placeholder="Lancha"></label>
+  <label>Plural <input name="plural" placeholder="Lanchas"></label>
+  <label>Ícono <input name="icono" placeholder="🚤" style="width:70px"></label>
+  <button class="btn btn-primary btn-sm" type="submit">+ Crear tipo</button>
+</form>
+<% } %>
+
+<div class="section-title">Tus tipos</div>
+<% if (!tipos.length) { %><div class="empty">Todavía no creaste ningún tipo propio.</div><% } %>
+<div class="cards2">
+<% tipos.forEach(function(t){ %>
+  <div class="panel">
+    <div style="display:flex; justify-content:space-between; gap:8px; align-items:center;">
+      <strong style="font-size:16px;"><%= t.icono || '📦' %> <%= t.nombre %></strong>
+      <a class="edit-link" href="/otros/<%= t.id %>"><%= t.n %> ficha<%= t.n===1?'':'s' %> · ver →</a>
+    </div>
+    <div class="muted" style="margin:6px 0;">Datos que anotás de cada uno (además del nombre y el estado):</div>
+    <% if (!(t.campos||[]).length) { %><div class="muted">Ninguno todavía.</div><% } %>
+    <table class="tabla"><tbody>
+      <% (t.campos||[]).forEach(function(c){ %>
+      <tr><td><%= c.label %></td><td class="muted"><%= TIPOS_CAMPO[c.tipo] %></td>
+        <% if (isAdmin) { %><td><form method="post" action="/config/tipo/<%= t.id %>/campo/<%= c.k %>/eliminar" class="inline-form" onsubmit="return confirm('¿Sacar este dato? Los valores ya cargados se dejan de mostrar.')"><button class="linkbtn" type="submit">Sacar</button></form></td><% } %></tr>
+      <% }); %>
+    </tbody></table>
+    <% if (isAdmin) { %>
+    <form method="post" action="/config/tipo/<%= t.id %>/campo" class="inline-edit" style="margin-top:8px; flex-wrap:wrap;">
+      <input name="label" placeholder="Nuevo dato (ej: Eslora, Peso, Raza)" style="width:190px" required>
+      <select name="tipo"><% Object.keys(TIPOS_CAMPO).forEach(function(k){ %><option value="<%= k %>"><%= TIPOS_CAMPO[k] %></option><% }); %></select>
+      <button class="btn btn-ghost btn-sm" type="submit">+ Agregar dato</button>
+    </form>
+    <details style="margin-top:10px;"><summary class="muted" style="cursor:pointer;">Cambiar nombre o ícono</summary>
+      <form method="post" action="/config/tipo/<%= t.id %>" class="inline-edit" style="margin-top:6px; flex-wrap:wrap;">
+        <input name="nombre" value="<%= t.nombre %>" required><input name="plural" value="<%= t.plural || '' %>" placeholder="Plural"><input name="icono" value="<%= t.icono || '' %>" style="width:60px">
+        <button class="btn btn-ghost btn-sm" type="submit">Guardar</button>
+      </form>
+      <form method="post" action="/config/tipo/<%= t.id %>/eliminar" style="margin-top:6px;" onsubmit="return confirm('¿Borrar el tipo <%= t.nombre %>?')"><button class="linkbtn" type="submit">Borrar este tipo</button></form>
+    </details>
+    <% } %>
+  </div>
+<% }); %>
+</div>
+<%- include('partials/bottom') %>
