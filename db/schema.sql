@@ -163,3 +163,8 @@ CREATE TABLE IF NOT EXISTS horas (
 );
 CREATE INDEX IF NOT EXISTS horas_fecha_idx ON horas(fecha);
 CREATE INDEX IF NOT EXISTS horas_persona_idx ON horas(persona_id);
+
+-- Combustible y kilómetros por flete (opcionales)
+ALTER TABLE fletes ADD COLUMN IF NOT EXISTS km_recorridos numeric;
+ALTER TABLE fletes ADD COLUMN IF NOT EXISTS combustible_litros numeric;
+ALTER TABLE fletes ADD COLUMN IF NOT EXISTS combustible_costo numeric;
