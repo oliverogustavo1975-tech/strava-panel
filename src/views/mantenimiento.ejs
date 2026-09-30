@@ -1,0 +1,63 @@
+<%- include('partials/top', {titulo, tag, activo, ruta}) %>
+<div class="section-title">Vencimientos (seguro, habilitación, service, revisión…)</div>
+<% if (isAdmin) { %>
+<form method="post" action="/mantenimiento/venc" class="filtro-form">
+  <label>Equipo / persona
+    <select name="recurso_id"><option value="">— General —</option>
+      <% recursos.forEach(function(r){ %><option value="<%= r.id %>"><%= r.nombre %> (<%= r.tipo %>)</option><% }); %>
+    </select></label>
+  <label>Concepto <input name="concepto" required placeholder="Seguro, habilitación, service…"></label>
+  <label>Vence <input type="date" name="fecha" required></label>
+  <label>Notas <input name="notas"></label>
+  <button class="btn btn-primary btn-sm" type="submit">+ Agregar</button>
+</form>
+<% } %>
+<% if (!venc.length) { %><div class="empty">No hay vencimientos cargados.</div><% } else { %>
+<div class="tabla-wrap"><table class="tabla">
+  <thead><tr><th>Vence</th><th>Concepto</th><th>Equipo / persona</th><th>Estado</th><th>Notas</th><% if (isAdmin) { %><th></th><% } %></tr></thead>
+  <tbody>
+  <% venc.forEach(function(v){ var d = Number(v.dias); %>
+  <tr><td><%= v.fecha_s.split('-').reverse().join('/') %></td><td><%= v.concepto %></td><td><%= v.recurso || '—' %></td>
+    <td class="<%= d<0?'venc-vencido':(d<=30?'venc-pronto':'') %>"><%= d<0 ? 'Vencido hace '+(-d)+' días' : (d===0?'Vence hoy':'Faltan '+d+' días') %></td>
+    <td><%= v.notas || '' %></td>
+    <% if (isAdmin) { %><td><form method="post" action="/mantenimiento/venc/<%= v.id %>/eliminar" class="inline-form" onsubmit="return confirm('¿Borrar este vencimiento?')"><button class="linkbtn" type="submit">Borrar</button></form></td><% } %>
+  </tr>
+  <% }); %>
+  </tbody>
+</table></div>
+<% } %>
+
+<div class="section-title">Historial de services y reparaciones</div>
+<% if (isAdmin) { %>
+<form method="post" action="/mantenimiento/service" class="filtro-form">
+  <label>Equipo
+    <select name="recurso_id" required><option value="">— Elegir —</option>
+      <% recursos.filter(function(r){return r.tipo!=='operario'}).forEach(function(r){ %><option value="<%= r.id %>"><%= r.nombre %></option><% }); %>
+    </select></label>
+  <label>Fecha <input type="date" name="fecha" value="<%= hoy %>" required></label>
+  <label>Trabajo hecho <input name="tipo" placeholder="Cambio de aceite, frenos…"></label>
+  <label>Km / horas <input name="km" inputmode="decimal" style="width:90px"></label>
+  <label>Costo <input name="costo" inputmode="decimal" style="width:90px"></label>
+  <label>Notas <input name="notas"></label>
+  <button class="btn btn-primary btn-sm" type="submit">+ Agregar</button>
+</form>
+<% } %>
+<% if (!mant.length) { %><div class="empty">Todavía no hay services cargados.</div><% } else { %>
+<div class="tabla-wrap"><table class="tabla">
+  <thead><tr><th>Fecha</th><th>Equipo</th><th>Trabajo</th><th>Km/horas</th><th>Costo</th><th>Notas</th><% if (isAdmin) { %><th></th><% } %></tr></thead>
+  <tbody>
+  <% mant.forEach(function(m){ %>
+  <tr><td><%= m.fecha_s.split('-').reverse().join('/') %></td><td><%= m.recurso || '(borrado)' %></td><td><%= m.tipo || '' %></td>
+    <td><%= m.km === null ? '' : fmt(m.km) %></td><td><%= m.costo === null ? '' : fmt(m.costo, 2) %></td><td><%= m.notas || '' %></td>
+    <% if (isAdmin) { %><td><form method="post" action="/mantenimiento/service/<%= m.id %>/eliminar" class="inline-form" onsubmit="return confirm('¿Borrar este registro?')"><button class="linkbtn" type="submit">Borrar</button></form></td><% } %>
+  </tr>
+  <% }); %>
+  </tbody>
+</table></div>
+<div class="section-title">Gasto de mantenimiento por equipo</div>
+<div class="tabla-wrap"><table class="tabla">
+  <thead><tr><th>Equipo</th><th>Registros</th><th>Costo total</th></tr></thead>
+  <tbody><% costoPor.forEach(function(c){ %><tr><td><%= c.recurso %></td><td><%= c.n %></td><td><strong><%= fmt(c.costo, 2) %></strong></td></tr><% }); %></tbody>
+</table></div>
+<% } %>
+<%- include('partials/bottom') %>
