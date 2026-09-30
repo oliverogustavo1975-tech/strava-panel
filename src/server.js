@@ -179,6 +179,7 @@ app.use("/personal", require("./routes/personal"));
 app.use("/", require("./routes/extra")); // inicio, costos, mantenimiento, calculadora
 app.use("/", require("./routes/config")); // configuración y otros recursos
 app.use("/", require("./routes/respaldo")); // descargas CSV
+app.use("/", require("./routes/pwa")); // instalar como app (manifest, ícono)
 
 app.get("/deposito", async (req, res, next) => {
   try {
