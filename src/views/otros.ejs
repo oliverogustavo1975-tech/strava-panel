@@ -1,0 +1,16 @@
+<%- include('partials/top', {titulo, tag, activo, ruta}) %>
+<% if (!tipos.length) { %>
+  <div class="empty">Todavía no hay tipos propios. Creá el primero en <a href="/config">Configuración</a> (por ejemplo: lanchas, vacas, trenes, caramelos).</div>
+<% } else { %>
+<div class="stats">
+  <% tipos.forEach(function(t){ var c = por[t.id] || {total:0}; %>
+  <a class="stat-card" href="/otros/<%= t.id %>" style="text-decoration:none; color:inherit;">
+    <div class="k"><%= t.icono || '📦' %> <%= t.plural || t.nombre %></div>
+    <div class="v"><%= c.total %></div>
+    <div class="muted-line"><%= c.disponible||0 %> disponibles · <%= c.ocupado||0 %> ocupados · <%= (c.mantenimiento||0)+(c.baja||0) %> fuera</div>
+  </a>
+  <% }); %>
+</div>
+<% } %>
+<div style="margin-top:10px;"><a class="edit-link" href="/config">⚙ Configurar tipos y datos →</a></div>
+<%- include('partials/bottom') %>
