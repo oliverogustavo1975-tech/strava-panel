@@ -26,6 +26,25 @@ app.use((req, res, next) => {
   next();
 });
 
+// Agrega al menú de las páginas viejas los links nuevos (Inicio, Costos, Mantenimiento, Calculadora)
+const NAV_EXTRA = '<a class="nav-link" href="/costos">Costos</a><a class="nav-link" href="/mantenimiento">Mantenimiento</a><a class="nav-link" href="/calculadora">Calculadora</a>';
+app.use((req, res, next) => {
+  const render = res.render.bind(res);
+  res.render = (view, opts, cb) => {
+    if (typeof opts === "function") { cb = opts; opts = {}; }
+    render(view, opts, (err, html) => {
+      if (err) return cb ? cb(err) : next(err);
+      if (!html.includes('href="/costos"')) {
+        html = html.replace(/(<a class="nav-link[^"]*" href="\/recursos">)/, '<a class="nav-link" href="/inicio">Inicio</a>$1')
+                   .replace(/(<a class="nav-link[^"]*" href="\/personal">Personal<\/a>)/, "$1" + NAV_EXTRA);
+      }
+      return cb ? cb(null, html) : res.send(html);
+    });
+  };
+  next();
+});
+
+
 const TIPOS = ["grua", "camion", "remolque", "operario"];
 const TIPO_LABEL_PL = { grua: "Grúas", camion: "Camiones", remolque: "Remolques", operario: "Operarios" };
 const PAISES = ["uruguay", "argentina", "brasil"];
@@ -45,14 +64,14 @@ function namesFor(ids, nameMap) {
   return (ids || []).map(id => nameMap[id] || id);
 }
 
-app.get("/", (req, res) => res.redirect("/recursos"));
+app.get("/", (req, res) => res.redirect("/inicio"));
 
 app.get("/login", (req, res) => {
-  res.render("login", { error: null, next: req.query.next || "/recursos" });
+  res.render("login", { error: null, next: req.query.next || "/inicio" });
 });
 
 app.post("/login", (req, res) => {
-  const next = req.body.next || "/recursos";
+  const next = req.body.next || "/inicio";
   if (!ADMIN_PASSWORD) {
     return res.render("login", { error: "Todavía no se configuró la contraseña en el servidor (variable ADMIN_PASSWORD en Render).", next });
   }
@@ -157,6 +176,7 @@ app.get("/fletes", async (req, res, next) => {
 app.use("/fletes", require("./routes/fletes"));
 
 app.use("/personal", require("./routes/personal"));
+app.use("/", require("./routes/extra")); // inicio, costos, mantenimiento, calculadora
 
 app.get("/deposito", async (req, res, next) => {
   try {
