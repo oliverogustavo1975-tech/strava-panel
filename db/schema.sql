@@ -147,3 +147,19 @@ ALTER TABLE fletes ADD COLUMN IF NOT EXISTS deposito_ingreso_id text;
 ALTER TABLE fletes ADD COLUMN IF NOT EXISTS desde_deposito_id text;
 ALTER TABLE deposito ADD COLUMN IF NOT EXISTS flete_ingreso_id text;
 ALTER TABLE deposito ADD COLUMN IF NOT EXISTS flete_egreso_id text;
+
+-- Horas y días de trabajo del personal
+CREATE TABLE IF NOT EXISTS horas (
+  id          text PRIMARY KEY,
+  persona_id  text NOT NULL,
+  fecha       date NOT NULL,
+  horas       numeric(5,2) NOT NULL DEFAULT 0,
+  horas_extra numeric(5,2) NOT NULL DEFAULT 0,
+  trabajo_id  text,
+  flete_id    text,
+  notas       text,
+  created_at  timestamptz NOT NULL DEFAULT now(),
+  updated_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS horas_fecha_idx ON horas(fecha);
+CREATE INDEX IF NOT EXISTS horas_persona_idx ON horas(persona_id);
