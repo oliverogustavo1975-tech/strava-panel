@@ -1,0 +1,35 @@
+<%- include('partials/top', {titulo, tag, activo, ruta}) %>
+<div style="margin-bottom:10px;"><a class="edit-link" href="/otros">← Todos los tipos</a> · <a class="edit-link" href="/config">⚙ Configurar datos</a></div>
+
+<% if (isAdmin) { var e = editar; %>
+<div class="section-title"><%= e ? 'Editar ficha' : 'Nueva ficha de ' + tipo.nombre %></div>
+<form method="post" action="/otros/<%= tipo.id %><%= e ? '/' + e.id : '' %>" class="filtro-form">
+  <label>Nombre <input name="nombre" required value="<%= e ? e.nombre : '' %>"></label>
+  <label>Estado <select name="estado"><% Object.keys(ESTADOS).forEach(function(k){ %><option value="<%= k %>" <%= e && e.estado===k ? 'selected' : '' %>><%= ESTADOS[k] %></option><% }); %></select></label>
+  <% (tipo.campos||[]).forEach(function(c){ var v = e && e.datos ? e.datos[c.k] : ''; if (v===null||v===undefined) v=''; %>
+  <label><%= c.label %> <input name="c_<%= c.k %>" <%= c.tipo==='fecha' ? 'type=date' : (c.tipo==='numero' ? 'inputmode=decimal' : '') %> value="<%= v %>"></label>
+  <% }); %>
+  <label>Notas <input name="notas" value="<%= e && e.notas ? e.notas : '' %>"></label>
+  <button class="btn btn-primary btn-sm" type="submit"><%= e ? 'Guardar' : '+ Agregar' %></button>
+  <% if (e) { %><a class="btn btn-ghost btn-sm" href="/otros/<%= tipo.id %>">Cancelar</a><% } %>
+</form>
+<% } %>
+
+<% if (!items.length) { %><div class="empty">Todavía no hay fichas de este tipo.</div><% } else { %>
+<div class="tabla-wrap"><table class="tabla">
+  <thead><tr><th>Nombre</th><th>Estado</th><% (tipo.campos||[]).forEach(function(c){ %><th><%= c.label %></th><% }); %><th>Notas</th><% if (isAdmin) { %><th></th><% } %></tr></thead>
+  <tbody>
+  <% items.forEach(function(i){ %>
+  <tr>
+    <td><strong><%= i.nombre %></strong></td>
+    <td><span class="pill pill-<%= ESTADO_PILL[i.estado] || 'disponible' %>"><%= ESTADOS[i.estado] || i.estado %></span></td>
+    <% (tipo.campos||[]).forEach(function(c){ var v = i.datos ? i.datos[c.k] : ''; if (v===null||v===undefined) v=''; if (c.tipo==='fecha' && v) v = String(v).split('-').reverse().join('/'); %><td><%= v %></td><% }); %>
+    <td><%= i.notas || '' %></td>
+    <% if (isAdmin) { %><td style="white-space:nowrap;"><a class="edit-link" href="/otros/<%= tipo.id %>?editar=<%= i.id %>">Editar</a>
+      <form method="post" action="/otros/<%= tipo.id %>/<%= i.id %>/eliminar" class="inline-form" onsubmit="return confirm('¿Borrar esta ficha?')"><button class="linkbtn" type="submit">Borrar</button></form></td><% } %>
+  </tr>
+  <% }); %>
+  </tbody>
+</table></div>
+<% } %>
+<%- include('partials/bottom') %>
