@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Torre — <%= isNew ? "Cargar horas" : "Editar horas" %></title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="wrap wrap-narrow">
+  <div class="form-card">
+    <h2><%= isNew ? "Cargar horas" : "Editar horas" %></h2>
+    <form method="post" action="<%= isNew ? '/personal' : '/personal/' + h.id %>">
+      <label class="field">
+        <span>Persona</span>
+        <select name="persona_id" required>
+          <option value="">Elegir…</option>
+          <% personas.forEach(function(p){ %><option value="<%= p.id %>" <%= h.persona_id===p.id?'selected':'' %>><%= p.nombre %></option><% }); %>
+        </select>
+      </label>
+      <label class="field">
+        <span>Fecha</span>
+        <input type="date" name="fecha" value="<%= h.fecha_s %>" required>
+      </label>
+      <label class="field">
+        <span>Horas normales</span>
+        <input type="number" step="0.25" min="0" name="horas" value="<%= h.horas != null ? Number(h.horas) : 8 %>">
+      </label>
+      <label class="field">
+        <span>Horas extra</span>
+        <input type="number" step="0.25" min="0" name="horas_extra" value="<%= h.horas_extra != null ? Number(h.horas_extra) : 0 %>">
+      </label>
+      <label class="field">
+        <span>Trabajo</span>
+        <select name="trabajo_id">
+          <option value="">Sin asociar</option>
+          <% jobs.forEach(function(j){ %><option value="<%= j.id %>" <%= h.trabajo_id===j.id?'selected':'' %>><%= j.titulo %></option><% }); %>
+        </select>
+      </label>
+      <label class="field">
+        <span>Flete</span>
+        <select name="flete_id">
+          <option value="">Sin asociar</option>
+          <% fletes.forEach(function(f){ %><option value="<%= f.id %>" <%= h.flete_id===f.id?'selected':'' %>><%= f.componente || 'Sin nombre' %><%= f.cliente ? ' · '+f.cliente : '' %></option><% }); %>
+        </select>
+      </label>
+      <label class="field">
+        <span>Notas</span>
+        <textarea name="notas" rows="2"><%= h.notas || '' %></textarea>
+      </label>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit"><%= isNew ? "Guardar" : "Guardar cambios" %></button>
+        <a class="btn btn-ghost" href="/personal">Cancelar</a>
+      </div>
+    </form>
+    <% if (!isNew) { %>
+    <form method="post" action="/personal/<%= h.id %>/eliminar" class="delete-form" onsubmit="return confirm('¿Eliminar este registro?');">
+      <button class="btn btn-danger" type="submit">Eliminar</button>
+    </form>
+    <% } %>
+  </div>
+</div>
+</body>
+</html>
