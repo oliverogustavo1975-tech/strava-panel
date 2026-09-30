@@ -141,3 +141,21 @@ body{background-image:url(/img/fondo.svg); background-size:1200px 800px; animati
 .flete-mapas{margin-top:4px; display:flex; flex-wrap:wrap; gap:14px; font-size:12px;}
 .flete-mapas a{color:var(--text-muted); text-decoration:none;}
 .flete-mapas a:hover{text-decoration:underline;}
+
+/* ===== páginas nuevas: inicio, costos, mantenimiento, calculadora ===== */
+.cards2{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:14px; margin-bottom:14px;}
+.panel{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 16px; box-shadow:var(--shadow);}
+.panel .tabla-wrap{margin:0;}
+.muted{color:var(--text-muted); font-size:12px;}
+.muted-line{color:var(--text-muted); font-size:12px; margin-top:2px;}
+.venc-vencido{color:var(--danger); font-weight:600;}
+.venc-pronto{color:var(--busy); font-weight:600;}
+.margen-ok{color:var(--ok); font-weight:600;}
+.inline-edit{display:flex; gap:4px; align-items:center; flex-wrap:nowrap;}
+.inline-edit input{width:88px; padding:5px 7px; font-size:13px; border:1px solid var(--border); border-radius:6px;}
+.barra{display:inline-block; width:120px; height:9px; background:var(--surface-2,#e6ebef); border-radius:6px; vertical-align:middle; overflow:hidden; margin-right:6px;}
+.barra-in{height:100%; background:var(--accent);}
+.calc label{display:flex; flex-direction:column; gap:3px; font-size:12.5px; color:var(--text-muted); margin-bottom:9px;}
+.calc input{padding:8px 10px; font-size:15px; border:1px solid var(--border); border-radius:7px; color:var(--text);}
+.calc-out{margin-top:10px; padding:10px 12px; background:var(--surface-2,#eef1f4); border-radius:8px; font-size:14px; line-height:1.55;}
+.notice{font-size:12.5px; color:var(--text-muted); background:var(--surface-2,#eef1f4); border-radius:8px; padding:9px 12px; margin:10px 0;}
