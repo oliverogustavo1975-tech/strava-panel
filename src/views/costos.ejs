@@ -1,0 +1,113 @@
+<%- include('partials/top', {titulo, tag, activo, ruta}) %>
+<form method="get" action="/costos" class="filtro-form">
+  <label>Mes <input type="month" name="mes" value="<%= mes %>"></label>
+  <button class="btn btn-ghost btn-sm" type="submit">Ver</button>
+</form>
+
+<div class="stats">
+  <div class="stat-card"><div class="k">Ingresos cargados</div><div class="v"><%= fmt(totales.ingresos) %></div></div>
+  <div class="stat-card"><div class="k">Costo de fletes</div><div class="v"><%= fmt(totales.costoFletes) %></div></div>
+  <div class="stat-card"><div class="k">Costo de personal (mes)</div><div class="v"><%= fmt(totales.personal) %></div><div class="muted-line"><%= fmt(totales.horas, 1) %> horas</div></div>
+  <div class="stat-card"><div class="k">Costo trabajos (iniciados en el mes)</div><div class="v"><%= fmt(totales.costoTrabajos) %></div></div>
+</div>
+<div class="notice">Los costos salen de: combustible cargado en el flete + km × costo por km del camión + horas del personal cargadas en Personal × su costo por hora + otros gastos. Para que las cuentas den, cargá las tarifas al final de esta página. Moneda: la que uses siempre (todo en la misma).</div>
+
+<div class="section-title">Fletes del mes: costo y margen</div>
+<% if (!filasF.length) { %><div class="empty">No hay fletes con fecha en este mes.</div><% } else { %>
+<div class="tabla-wrap"><table class="tabla">
+  <thead><tr><th>Día</th><th>Flete</th><th>Camión</th><th>Km</th><th>Comb.</th><th>Desgaste</th><th>Personal</th><th>Otros</th><th>Costo total</th><th>Precio cobrado</th><th>Margen</th><% if (isAdmin) { %><th>Cargar</th><% } %></tr></thead>
+  <tbody>
+  <% filasF.forEach(function(x){ %>
+  <tr>
+    <td><%= x.f.dia.slice(8) %>/<%= x.f.dia.slice(5,7) %></td>
+    <td><strong><%= x.f.componente %></strong><br><span class="muted"><%= x.f.cliente || '' %></span></td>
+    <td><%= x.camionN %></td>
+    <td><%= x.f.km_recorridos === null ? '' : fmt(x.f.km_recorridos) %></td>
+    <td><%= fmt(x.c.comb) %></td><td><%= fmt(x.c.desgaste) %></td><td><%= fmt(x.c.personal) %></td><td><%= fmt(x.c.otros) %></td>
+    <td><strong><%= fmt(x.c.total) %></strong></td>
+    <td><%= x.precio === null ? '—' : fmt(x.precio) %></td>
+    <td class="<%= x.margen === null ? '' : (x.margen < 0 ? 'venc-vencido' : 'margen-ok') %>"><%= x.margen === null ? '—' : fmt(x.margen) + (x.precio ? ' ('+ fmt(x.margen / x.precio * 100) +'%)' : '') %></td>
+    <% if (isAdmin) { %><td><form method="post" action="/costos/finanzas" class="inline-edit">
+      <input type="hidden" name="tipo" value="flete"><input type="hidden" name="ref_id" value="<%= x.f.id %>"><input type="hidden" name="mes" value="<%= mes %>">
+      <input name="precio" inputmode="decimal" placeholder="Precio" value="<%= x.precio === null ? '' : x.precio %>">
+      <input name="otros_gastos" inputmode="decimal" placeholder="Otros gastos" value="<%= x.otros === null || x.otros === undefined ? '' : x.otros %>">
+      <button class="btn btn-ghost btn-sm" type="submit">OK</button></form></td><% } %>
+  </tr>
+  <% }); %>
+  </tbody>
+</table></div>
+<% } %>
+
+<div class="section-title">Trabajos iniciados en el mes: costo y margen</div>
+<% if (!filasJ.length) { %><div class="empty">No hay trabajos que empiecen en este mes.</div><% } else { %>
+<div class="tabla-wrap"><table class="tabla">
+  <thead><tr><th>Trabajo</th><th>Fletes</th><th>Costo fletes</th><th>Personal</th><th>Otros</th><th>Costo total</th><th>Precio</th><th>Margen</th><% if (isAdmin) { %><th>Cargar</th><% } %></tr></thead>
+  <tbody>
+  <% filasJ.forEach(function(x){ %>
+  <tr>
+    <td><strong><%= x.j.titulo %></strong><br><span class="muted"><%= x.j.cliente || '' %></span></td>
+    <td><%= x.fletes %></td><td><%= fmt(x.combF) %></td><td><%= fmt(x.personal) %></td><td><%= fmt(x.otros) %></td>
+    <td><strong><%= fmt(x.total) %></strong></td><td><%= x.precio === null ? '—' : fmt(x.precio) %></td>
+    <td class="<%= x.margen === null ? '' : (x.margen < 0 ? 'venc-vencido' : 'margen-ok') %>"><%= x.margen === null ? '—' : fmt(x.margen) + (x.precio ? ' ('+ fmt(x.margen / x.precio * 100) +'%)' : '') %></td>
+    <% if (isAdmin) { %><td><form method="post" action="/costos/finanzas" class="inline-edit">
+      <input type="hidden" name="tipo" value="trabajo"><input type="hidden" name="ref_id" value="<%= x.j.id %>"><input type="hidden" name="mes" value="<%= mes %>">
+      <input name="precio" inputmode="decimal" placeholder="Precio" value="<%= x.precio === null ? '' : x.precio %>">
+      <input name="otros_gastos" inputmode="decimal" placeholder="Otros gastos" value="<%= x.otrosRaw === null || x.otrosRaw === undefined ? '' : x.otrosRaw %>">
+      <button class="btn btn-ghost btn-sm" type="submit">OK</button></form></td><% } %>
+  </tr>
+  <% }); %>
+  </tbody>
+</table></div>
+<% } %>
+
+<div class="section-title">Consumo por camión (fletes del mes)</div>
+<% if (!camiones.length) { %><div class="empty">Sin fletes con camión en este mes.</div><% } else { %>
+<div class="tabla-wrap"><table class="tabla">
+  <thead><tr><th>Camión</th><th>Fletes</th><th>Km</th><th>Litros</th><th>L / 100 km</th><th>Gasto combustible</th><th>Costo comb. por km</th></tr></thead>
+  <tbody>
+  <% camiones.forEach(function(c){ %>
+  <tr><td><%= c.nombre %></td><td><%= c.fletes %></td><td><%= fmt(c.km) %></td><td><%= fmt(c.litros, 1) %></td>
+    <td><strong><%= c.l100 === null ? '—' : fmt(c.l100, 1) %></strong></td><td><%= fmt(c.costo) %></td><td><%= c.costoKm === null ? '—' : fmt(c.costoKm, 2) %></td></tr>
+  <% }); %>
+  </tbody>
+</table></div>
+<% } %>
+
+<div class="section-title">Uso de la flota en el mes (días con trabajo / <%= diasMes %>)</div>
+<div class="tabla-wrap"><table class="tabla">
+  <thead><tr><th>Equipo</th><th>Días</th><th>Uso</th></tr></thead>
+  <tbody>
+  <% utilFilas.forEach(function(u){ %>
+  <tr><td><%= u.r.nombre %> <span class="muted"><%= u.r.tipo === 'grua' ? 'grúa' : 'camión' %></span></td><td><%= u.dias %></td>
+    <td><div class="barra"><div class="barra-in" style="width:<%= u.pct %>%"></div></div> <%= u.pct %>%</td></tr>
+  <% }); %>
+  </tbody>
+</table></div>
+
+<% if (isAdmin) { %>
+<div class="section-title" id="tarifas">Tarifas (para que las cuentas den)</div>
+<form method="post" action="/costos/config" class="filtro-form">
+  <input type="hidden" name="mes" value="<%= mes %>">
+  <label>Las horas extra se pagan × <input name="factor_extra" value="<%= factor %>" style="width:60px" inputmode="decimal"></label>
+  <button class="btn btn-ghost btn-sm" type="submit">Guardar</button>
+</form>
+<div class="cards2">
+  <div class="panel"><strong>Costo por hora del personal</strong>
+    <table class="tabla"><tbody>
+    <% operarios.forEach(function(o){ var t = tar[o.id]; %>
+    <tr><td><%= o.nombre %></td><td><form method="post" action="/costos/tarifa" class="inline-edit">
+      <input type="hidden" name="recurso_id" value="<%= o.id %>"><input type="hidden" name="mes" value="<%= mes %>">
+      <input name="costo_hora" inputmode="decimal" placeholder="por hora" value="<%= t && t.costo_hora !== null ? t.costo_hora : '' %>"><button class="btn btn-ghost btn-sm" type="submit">OK</button></form></td></tr>
+    <% }); %>
+    </tbody></table></div>
+  <div class="panel"><strong>Desgaste por km de cada camión</strong> <span class="muted">(gomas, mantenimiento, amortización)</span>
+    <table class="tabla"><tbody>
+    <% vehiculos.forEach(function(o){ var t = tar[o.id]; %>
+    <tr><td><%= o.nombre %></td><td><form method="post" action="/costos/tarifa" class="inline-edit">
+      <input type="hidden" name="recurso_id" value="<%= o.id %>"><input type="hidden" name="mes" value="<%= mes %>">
+      <input name="costo_km" inputmode="decimal" placeholder="por km" value="<%= t && t.costo_km !== null ? t.costo_km : '' %>"><button class="btn btn-ghost btn-sm" type="submit">OK</button></form></td></tr>
+    <% }); %>
+    </tbody></table></div>
+</div>
+<% } %>
+<%- include('partials/bottom') %>
