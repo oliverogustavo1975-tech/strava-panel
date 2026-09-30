@@ -5,8 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Torre — <%= titulo %></title>
 <link rel="stylesheet" href="/css/style.css">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#1F3A5C">
+<link rel="apple-touch-icon" href="/icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 </head>
-<body>
+<body class="pg-<%= typeof activo !== 'undefined' ? activo : '' %>">
 <div class="wrap">
   <div class="topbar">
     <div class="brand">
@@ -36,3 +41,5 @@
     </div>
     <div class="gen-note">Actualizado: <%= new Date().toLocaleString("es-UY") %></div>
   </div>
+<script>if ("serviceWorker" in navigator) { navigator.serviceWorker.register("/sw.js").catch(function(){}); }</script>
+
