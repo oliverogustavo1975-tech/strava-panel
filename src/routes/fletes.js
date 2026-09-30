@@ -194,11 +194,19 @@ router.post("/:id/copiar-deposito", requireAuth, async (req, res, next) => {
     const f = rows[0];
     if (!f) return res.status(404).send("Flete no encontrado");
     if (!f.deposito_ingreso_id) {
-      await db.query(
-        `INSERT INTO deposito (id, componente, numero_serie, cliente, fecha_ingreso, procedencia, notas)
-         VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-        [genId(), f.componente, f.numero_serie, f.cliente, f.fecha_llegada || new Date(), f.origen_texto, f.notas]
-      );
+      // La pieza queda vinculada al flete (así no se duplica si el flete se edita después)
+      const did = genId();
+      const llegada = f.fecha_llegada || new Date();
+      await withTx(async c => {
+        await c.query(
+          "INSERT INTO deposito (id, componente, numero_serie, cliente, fecha_ingreso, procedencia, notas, flete_ingreso_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",
+          [did, f.componente, f.numero_serie, f.cliente, llegada, f.origen_texto, f.notas, f.id]
+        );
+        await c.query(
+          "UPDATE fletes SET deposito_ingreso_id=$2, a_deposito=true, fecha_llegada=COALESCE(fecha_llegada,$3) WHERE id=$1",
+          [f.id, did, llegada]
+        );
+      });
     }
     res.redirect("/deposito");
   } catch (err) {
