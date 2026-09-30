@@ -101,7 +101,24 @@ async function loadOptions(fleteId) {
 router.get("/nuevo", requireAuth, async (req, res, next) => {
   try {
     const { groups, jobs, depositoItems } = await loadOptions();
-    res.render("flete-form", { f: {}, isNew: true, groups, jobs, depositoItems, toInputLocal });
+    let f = {};
+    if (req.query.copiar) {
+      // Duplicar un flete: se copia todo menos fechas, llegada y vínculos de depósito
+      const { rows } = await db.query("SELECT * FROM fletes WHERE id=$1", [req.query.copiar]);
+      if (rows[0]) {
+        f = { ...rows[0], id: undefined, fecha: null, fecha_llegada: null, llegada_nota: null,
+              a_deposito: false, deposito_ingreso_id: null, desde_deposito_id: null };
+      }
+    } else if (req.query.desde_deposito) {
+      // Crear un flete a partir de una pieza del depósito
+      const { rows } = await db.query("SELECT * FROM deposito WHERE id=$1", [req.query.desde_deposito]);
+      const d = rows[0];
+      if (d) {
+        f = { componente: d.componente, numero_serie: d.numero_serie, cliente: d.cliente,
+              origen_texto: "Depósito", notas: d.notas, desde_deposito_id: d.id };
+      }
+    }
+    res.render("flete-form", { f, isNew: true, groups, jobs, depositoItems, toInputLocal });
   } catch (err) {
     next(err);
   }
@@ -164,6 +181,25 @@ router.post("/:id", requireAuth, async (req, res, next) => {
     await syncDeposito(c, req.params.id);
     });
     res.redirect("/fletes");
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Copiar un flete al depósito (crea la pieza con los mismos datos, sin vínculo automático)
+router.post("/:id/copiar-deposito", requireAuth, async (req, res, next) => {
+  try {
+    const { rows } = await db.query("SELECT * FROM fletes WHERE id=$1", [req.params.id]);
+    const f = rows[0];
+    if (!f) return res.status(404).send("Flete no encontrado");
+    if (!f.deposito_ingreso_id) {
+      await db.query(
+        `INSERT INTO deposito (id, componente, numero_serie, cliente, fecha_ingreso, procedencia, notas)
+         VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+        [genId(), f.componente, f.numero_serie, f.cliente, f.fecha_llegada || new Date(), f.origen_texto, f.notas]
+      );
+    }
+    res.redirect("/deposito");
   } catch (err) {
     next(err);
   }
