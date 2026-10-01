@@ -1,0 +1,203 @@
+<%- include('partials/top', { titulo: 'Mapa', tag: 'Ubicación de la flota — grúas, camiones y remolques', activo: 'mapa', ruta: '/mapa' }) %>
+<style>
+#mapa-root{max-width:1180px;margin:0 auto;}
+.mco-note{font-size:13px;color:#33424f;background:#EEF2F6;border:1px solid #D6DEE6;border-radius:10px;padding:10px 12px;margin:14px 0 10px;}
+.mco-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px;}
+.mco-seg{display:flex;flex-wrap:wrap;border:1px solid #C9D2DA;border-radius:8px;overflow:hidden;}
+.mco-seg button{border:none;background:#fff;color:#33424f;padding:7px 12px;font-size:12.5px;cursor:pointer;border-right:1px solid #C9D2DA;font-family:inherit;}
+.mco-seg button:last-child{border-right:none;}
+.mco-seg button.active{background:#1F3A5C;color:#fff;font-weight:600;}
+.mco-legend{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:11.5px;color:#5C6B7A;margin-bottom:8px;}
+.mco-panel{font-size:13px;background:#F7F9FB;border:1px solid #D6DEE6;border-radius:10px;padding:10px 12px;margin-top:10px;min-height:40px;}
+.mco-panhead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;}
+.mco-row{display:flex;justify-content:space-between;align-items:center;gap:8px;border:1px solid #E1E7ED;background:#fff;border-radius:8px;padding:7px 10px;margin-top:6px;font-size:12.5px;}
+.mco-muted{color:#7A8794;font-size:11px;}
+.mco-pill{display:inline-flex;align-items:center;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600;white-space:nowrap;}
+.mco-disponible{background:#E1F8EA;color:#14A04A;}
+.mco-ocupado{background:#FBEEDD;color:#C8720A;}
+.mco-mantenimiento{background:#EEECE7;color:#6B6357;}
+.mco-baja{background:#F8E6E3;color:#C0392B;}
+.mco-btn{border:1px solid #C9D2DA;background:#fff;border-radius:7px;padding:3px 9px;font-size:12px;cursor:pointer;font-family:inherit;color:#33424f;}
+.mco-warn{font-size:12.5px;color:#33424f;background:#FBF3E6;border:1px solid #EBD9B8;border-left:4px solid #C8720A;border-radius:10px;padding:10px 12px;margin-top:12px;}
+.mco-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.mco-chip{background:#EEF2F6;border:1px solid #D6DEE6;border-radius:7px;padding:4px 9px;font-size:12px;color:#33424f;}
+</style>
+<div id="mapa-root"><div class="mco-note">Cargando mapa…</div></div>
+<script>window.__RECURSOS__ = <%- recursosJson %>;</script>
+<script>
+var COUNTRIES={"argentina":[[[-30.22,-57.63],[-34.43,-58.5],[-35.29,-57.23],[-35.98,-57.36],[-36.41,-56.74],[-36.9,-56.79],[-38.18,-57.75],[-38.72,-59.23],[-38.83,-62.34],[-40.68,-62.15],[-41.03,-62.75],[-41.17,-63.77],[-40.8,-64.73],[-41.06,-65.12],[-42.06,-64.98],[-42.36,-64.3],[-42.04,-63.76],[-42.56,-63.46],[-43.5,-65.18],[-45.04,-65.57],[-45.04,-66.51],[-45.55,-67.29],[-46.3,-67.58],[-47.24,-65.64],[-48.13,-65.99],[-48.7,-67.17],[-49.87,-67.82],[-50.73,-69.14],[-51.77,-68.82],[-52.35,-68.15],[-52.01,-71.91],[-50.68,-72.31],[-50.38,-73.33],[-49.32,-73.42],[-48.24,-72.33],[-44.97,-71.66],[-44.78,-71.22],[-44.21,-71.79],[-43.79,-71.46],[-43.41,-71.92],[-42.25,-72.15],[-42.05,-71.75],[-40.83,-71.92],[-38.92,-71.41],[-38.55,-70.81],[-36.66,-71.12],[-36.01,-70.36],[-35.17,-70.39],[-34.19,-69.82],[-31.37,-70.54],[-30.34,-69.92],[-28.46,-69.66],[-26.9,-68.3],[-26.51,-68.59],[-24.52,-68.42],[-24.03,-67.33],[-22.74,-67.11],[-21.83,-66.27],[-22.08,-64.96],[-22.8,-64.38],[-21.99,-63.99],[-22.03,-62.85],[-23.88,-60.85],[-25.16,-57.78],[-25.6,-57.63],[-27.12,-58.62],[-27.39,-55.7],[-26.62,-54.79],[-25.74,-54.63],[-25.55,-54.13],[-26.12,-53.63],[-26.92,-53.65],[-30.22,-57.63]],[[-52.64,-68.63],[-53.85,-67.75],[-54.7,-65.05],[-55.2,-65.5],[-55.25,-66.45],[-54.9,-66.96],[-54.87,-68.63],[-52.64,-68.63]]],"uruguay":[[[-30.22,-57.63],[-30.11,-56.98],[-30.88,-55.97],[-30.85,-55.6],[-32.05,-53.79],[-32.73,-53.21],[-33.2,-53.65],[-33.77,-53.37],[-34.4,-53.81],[-34.95,-54.94],[-34.75,-55.67],[-34.86,-56.22],[-34.43,-57.14],[-34.46,-57.82],[-33.91,-58.43],[-33.26,-58.35],[-33.04,-58.13],[-32.04,-58.14],[-30.22,-57.63]]],"brasil":[[[-33.77,-53.37],[-33.2,-53.65],[-32.73,-53.21],[-32.05,-53.79],[-30.11,-56.98],[-30.22,-57.63],[-26.92,-53.65],[-26.12,-53.63],[-25.55,-54.13],[-25.74,-54.63],[-24.02,-54.29],[-23.96,-55.4],[-22.36,-55.8],[-22.09,-57.94],[-20.18,-58.17],[-18.17,-57.5],[-17.27,-58.28],[-16.3,-58.24],[-16.26,-60.16],[-13.78,-60.5],[-12.46,-64.32],[-11.57,-65.4],[-9.76,-65.34],[-9.93,-66.65],[-11.01,-68.27],[-11.01,-70.55],[-9.49,-70.48],[-10.05,-72.18],[-9.46,-73.23],[-9.03,-73.02],[-7.52,-73.99],[-6.63,-73.12],[-5.27,-72.89],[-4.3,-69.89],[-1.12,-69.42],[0.54,-70.02],[0.99,-69.22],[1.09,-69.8],[1.71,-69.82],[2.04,-67.54],[1.13,-67.07],[0.79,-65.55],[2.2,-63.37],[2.5,-64.27],[4.06,-64.82],[3.77,-63.09],[4.54,-60.97],[5.2,-60.73],[5.01,-59.98],[3.96,-59.54],[2.76,-59.97],[1.32,-59.03],[1.82,-56.0],[2.51,-55.97],[2.12,-52.94],[4.2,-51.32],[1.9,-50.51],[1.74,-49.97],[0.22,-50.7],[-0.08,-50.39],[-0.24,-48.62],[-1.24,-48.58],[-0.58,-47.82],[-1.55,-44.91],[-2.69,-44.58],[-2.38,-43.42],[-2.87,-39.98],[-4.82,-37.22],[-5.15,-35.6],[-7.34,-34.73],[-9.0,-35.13],[-13.06,-38.67],[-17.87,-39.27],[-21.94,-40.94],[-22.97,-41.99],[-23.35,-44.65],[-24.89,-47.65],[-25.88,-48.5],[-28.67,-48.89],[-33.77,-53.37]]]};
+/* Mapa de ubicaciones — Central de Operaciones.
+   Autocontenido: contornos reales de Uruguay/Argentina/Brasil (Natural Earth 110m
+   simplificados, en COUNTRIES) + pines por ubicación. Lee window.__RECURSOS__
+   (grúas, camiones y remolques con su estado ya calculado en el servidor). */
+(function(){
+"use strict";
+
+var GEO = {
+  "gruasmar":[-34.6932,-56.2399],"pampa":[-32.2467,-56.2201],"parque eolico pampa":[-32.2467,-56.2201],
+  "parque eolico pampa uruguay":[-32.2467,-56.2201],"libertad":[-34.6295,-56.5891],"centenario":[-32.8716,-56.4847],
+  "florida":[-34.0956,-56.2144],"parque eolico florida":[-34.0956,-56.2144],"parque eolico florida 1":[-34.0956,-56.2144],
+  "parque eolico florida 2":[-34.0956,-56.2144],"valentines":[-33.2558,-54.4631],"parque eolico valentines":[-33.2558,-54.4631],
+  "talas de maciel":[-33.6145,-56.6911],"melo":[-32.3668,-54.1676],"melo wind":[-32.3668,-54.1676],
+  "parque eolico melo wind":[-32.3668,-54.1676],"parque eolico melowind":[-32.3668,-54.1676],
+  "general hacha":[-37.3787,-64.5956],"general acha":[-37.3787,-64.5956],"parque eolico general hacha":[-37.3787,-64.5956],
+  "argentina":[-33.2400,-65.0500],"brasil":[-30.0346,-51.2177],"uruguay":[-32.5228,-55.7658]
+};
+var REF = {
+  uruguay:[["Montevideo",-34.9011,-56.1645],["Florida",-34.0956,-56.2144],["Durazno",-33.3800,-56.5230],["Melo",-32.3668,-54.1676],["Salto",-31.3833,-57.9667],["Rocha",-34.4826,-54.3380]],
+  argentina:[["San Luis",-33.2950,-66.3356],["General Acha",-37.3787,-64.5956],["Buenos Aires",-34.6037,-58.3816]],
+  brasil:[["Chuí",-33.6872,-53.4566],["Pelotas",-31.7719,-52.3425],["Porto Alegre",-30.0346,-51.2177]]
+};
+var STCOL={disponible:"#14A04A",ocupado:"#E08A1E",mantenimiento:"#6B6357",baja:"#C0392B"};
+var PFLAG={uruguay:"🇺🇾",argentina:"🇦🇷",brasil:"🇧🇷"}, PNAME={uruguay:"Uruguay",argentina:"Argentina",brasil:"Brasil"};
+var TLBL={grua:"Grúa",camion:"Camión",remolque:"Remolque"};
+function tipoIcon(t){return t==="grua"?"🏗":t==="camion"?"🚚":t==="remolque"?"🔗":"•";}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function norm(s){return String(s==null?"":s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g," ").trim();}
+function parseCoords(str){
+  var v=String(str==null?"":str).trim(); if(!v) return null;
+  if(/^https?:\/\//i.test(v)||/goo\.gl|maps\./i.test(v)){var m0=v.match(/@?(-?\d{1,3}\.\d+)[, ]+(-?\d{1,3}\.\d+)/);return m0?[parseFloat(m0[1]),parseFloat(m0[2])]:null;}
+  var m=v.replace(/[()]/g,"").match(/^\s*(-?\d{1,3}(?:[.,]\d+)?)\s*[,; ]\s*(-?\d{1,3}(?:[.,]\d+)?)\s*$/);
+  if(m){var a=parseFloat(m[1].replace(",",".")),b=parseFloat(m[2].replace(",","."));if(isFinite(a)&&isFinite(b)&&Math.abs(a)<=90&&Math.abs(b)<=180)return [a,b];}
+  var d=v.match(/(\d{1,3})[°\s]+(\d{1,2})['\s]+([\d.]+)"?\s*([NS])[, ]+(\d{1,3})[°\s]+(\d{1,2})['\s]+([\d.]+)"?\s*([EWO])/i);
+  if(d){var lat=(+d[1])+(+d[2])/60+(+d[3])/3600;if(/s/i.test(d[4]))lat=-lat;var lng=(+d[5])+(+d[6])/60+(+d[7])/3600;if(/[wo]/i.test(d[8]))lng=-lng;return [lat,lng];}
+  return null;
+}
+function resCoord(r){
+  var u=r.ubicacion_maps_url||"",t=r.ubicacion_texto||"";
+  var c=parseCoords(u); if(c) return {lat:c[0],lng:c[1],approx:false,etq:(t||"coordenadas")};
+  var gu=GEO[norm(u)]; if(gu) return {lat:gu[0],lng:gu[1],approx:true,etq:(u||t)};
+  c=parseCoords(t); if(c) return {lat:c[0],lng:c[1],approx:false,etq:(t||"coordenadas")};
+  var gt=GEO[norm(t)]; if(gt) return {lat:gt[0],lng:gt[1],approx:true,etq:(t||u)};
+  return null;
+}
+function coordPais(lat,lng){ if(lng<-58.6) return "argentina"; if(lng>-53.6&&lat>-33.9) return "brasil"; return "uruguay"; }
+
+var S={tx:0,ty:0,s:1,sel:null,vbw:1000,vbh:640,focus:"todos",proj:null,data:null,groups:null};
+
+function buildPoints(){
+  var out=[],sin=[];
+  (window.__RECURSOS__||[]).forEach(function(r){
+    if(r.tipo!=="grua"&&r.tipo!=="camion"&&r.tipo!=="remolque") return;
+    var c=resCoord(r);
+    if(c) out.push({r:r,c:c,pais:coordPais(c.lat,c.lng)});
+    else sin.push(r);
+  });
+  return {pts:out,sin:sin};
+}
+function makeProjection(fp){
+  var lats=[],lngs=[];
+  fp.forEach(function(p){lats.push(p[0]);lngs.push(p[1]);});
+  if(!lats.length){lats=[-34.9,-30.1];lngs=[-58.4,-53.1];}
+  var minLa=Math.min.apply(null,lats),maxLa=Math.max.apply(null,lats),minLo=Math.min.apply(null,lngs),maxLo=Math.max.apply(null,lngs);
+  var pLa=Math.max((maxLa-minLa)*0.08,0.2),pLo=Math.max((maxLo-minLo)*0.08,0.2);
+  minLa-=pLa;maxLa+=pLa;minLo-=pLo;maxLo+=pLo;
+  var mid=(minLa+maxLa)/2,k=Math.cos(mid*Math.PI/180);
+  var X=function(lng){return (lng-minLo)*k;},Y=function(lat){return (maxLa-lat);};
+  var bw=X(maxLo)||1,bh=Y(minLa)||1,VBW=1000,VBH=Math.max(300,Math.min(820,Math.round(1000*bh/bw)));
+  S.vbw=VBW;S.vbh=VBH;
+  return function(lat,lng){return [X(lng)/bw*VBW,Y(lat)/bh*VBH];};
+}
+function focusPoints(pts,focus){
+  if(focus==="todos"){ return pts.length?pts.map(function(p){return [p.c.lat,p.c.lng];}):(COUNTRIES.uruguay[0]||[]).slice(); }
+  var fp=(COUNTRIES[focus]&&COUNTRIES[focus][0]?COUNTRIES[focus][0].slice():[]);
+  pts.filter(function(p){return p.pais===focus;}).forEach(function(p){fp.push([p.c.lat,p.c.lng]);});
+  return fp.length?fp:(COUNTRIES.uruguay[0]||[]);
+}
+function groupPoints(pts,proj){
+  var g={};
+  pts.forEach(function(p){var k=p.c.lat.toFixed(3)+","+p.c.lng.toFixed(3);(g[k]=g[k]||{lat:p.c.lat,lng:p.c.lng,approx:p.c.approx,etq:p.c.etq,items:[]}).items.push(p.r);if(!p.c.approx)g[k].approx=false;});
+  return Object.keys(g).map(function(k){var o=g[k];var xy=proj(o.lat,o.lng);o.x=xy[0];o.y=xy[1];o.key=k;return o;});
+}
+function applyTransform(){
+  var g=document.getElementById("mapa-scene"); if(!g) return;
+  g.setAttribute("transform","translate("+S.tx+","+S.ty+") scale("+S.s+")");
+  var r=11/S.s,f=13/S.s,n=g.querySelectorAll("[data-mk]");
+  for(var i=0;i<n.length;i++){var el=n[i],kind=el.getAttribute("data-mk");
+    if(kind==="dot")el.setAttribute("r",r);else if(kind==="ref")el.setAttribute("r",3/S.s);
+    else if(kind==="reftext")el.setAttribute("font-size",12/S.s);else if(kind==="dottext")el.setAttribute("font-size",f);}
+}
+function dibujar(){
+  var host=document.getElementById("mapa-svg-host"); if(!host) return;
+  var focus=S.focus,data=S.data;
+  var shown=(focus==="todos")?data.pts.slice():data.pts.filter(function(p){return p.pais===focus;});
+  var proj=makeProjection(focusPoints(data.pts,focus)); S.proj=proj;
+  var groups=groupPoints(shown,proj); S.groups=groups;
+  var paths="";
+  ["brasil","argentina","uruguay"].forEach(function(cp){
+    var fill=(focus==="todos"||focus===cp)?"#DCE7F2":"#EDF1F5",op=(focus==="todos"||focus===cp)?"0.95":"0.6";
+    (COUNTRIES[cp]||[]).forEach(function(ring){
+      var d=ring.map(function(q,i){var p=proj(q[0],q[1]);return (i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1);}).join(" ")+" Z";
+      paths+='<path d="'+d+'" fill="'+fill+'" fill-opacity="'+op+'" stroke="#1F3A5C" stroke-width="1.4" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>';
+    });
+  });
+  var refs=(focus==="todos"?["uruguay","argentina","brasil"]:[focus]);
+  var refDots=refs.reduce(function(a,cp){return a.concat(REF[cp]||[]);},[]).map(function(rf){var p=proj(rf[1],rf[2]);
+    return '<circle data-mk="ref" cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="3" fill="#7A8794" opacity="0.8"/>'
+      +'<text data-mk="reftext" x="'+(p[0]+6).toFixed(1)+'" y="'+(p[1]+4).toFixed(1)+'" font-size="12" fill="#5C6B7A" style="pointer-events:none">'+esc(rf[0])+'</text>';}).join("");
+  var markers=groups.map(function(g){
+    var code=(g.items[0].status&&g.items[0].status.code)||"disponible";
+    var col=g.items.length>1?"#2C5F8A":(STCOL[code]||"#2C5F8A");
+    var label=g.items.length>1?g.items.length:tipoIcon(g.items[0].tipo);
+    return '<g style="cursor:pointer" onclick="MapaCO.open(\''+g.key+'\')">'
+      +'<circle data-mk="dot" cx="'+g.x.toFixed(1)+'" cy="'+g.y.toFixed(1)+'" r="11" fill="'+col+'" stroke="#fff" stroke-width="2.5" vector-effect="non-scaling-stroke"/>'
+      +'<text data-mk="dottext" x="'+g.x.toFixed(1)+'" y="'+(g.y+4.5).toFixed(1)+'" font-size="13" text-anchor="middle" fill="#fff" font-weight="700" style="pointer-events:none">'+esc(String(label))+'</text></g>';
+  }).join("");
+  host.innerHTML='<svg id="mapa-svg" viewBox="0 0 '+S.vbw+' '+S.vbh+'" width="100%" style="display:block;height:60vh;min-height:360px;background:#fff;border:1px solid #C9D2DA;border-radius:12px;touch-action:none;cursor:grab;overflow:hidden;">'
+    +'<g id="mapa-scene">'+paths+refDots+markers+'</g></svg>';
+  S.s=1;S.tx=0;S.ty=0; applyTransform(); wireZoom();
+  if(S.sel&&!groups.some(function(g){return g.key===S.sel;}))S.sel=null;
+  renderPanel();
+}
+function renderPanel(){
+  var el=document.getElementById("mapa-panel"); if(!el) return;
+  if(!S.sel){el.innerHTML='<span style="color:#5C6B7A;font-size:13px;">Tocá un punto del mapa para ver qué equipos hay ahí.</span>';return;}
+  var g=(S.groups||[]).find(function(x){return x.key===S.sel;}); if(!g){el.innerHTML="";return;}
+  var rows=g.items.slice().sort(function(a,b){return (a.nombre||"").localeCompare(b.nombre||"","es",{numeric:true});}).map(function(r){
+    var st=r.status||{code:"disponible",label:""};
+    return '<div class="mco-row"><span>'+tipoIcon(r.tipo)+' <strong>'+esc(r.nombre)+'</strong> <span class="mco-muted">'+esc(TLBL[r.tipo]||"")+(r.identificador?" · "+esc(r.identificador):"")+'</span></span>'
+      +'<span class="mco-pill mco-'+esc(st.code)+'">'+esc(st.label||"")+'</span></div>';
+  }).join("");
+  el.innerHTML='<div class="mco-panhead"><strong>📍 '+esc(g.etq||"Ubicación")+' · '+g.items.length+' equipo'+(g.items.length===1?"":"s")+(g.approx?' <span class="mco-muted">· por localidad (aprox.)</span>':'')+'</strong>'
+    +'<button class="mco-btn" onclick="MapaCO.open(null)">✕</button></div>'+rows;
+}
+function wireZoom(){
+  var svg=document.getElementById("mapa-svg"); if(!svg) return;
+  function toVB(e){var r=svg.getBoundingClientRect();return [(e.clientX-r.left)/r.width*S.vbw,(e.clientY-r.top)/r.height*S.vbh];}
+  svg.addEventListener("wheel",function(e){e.preventDefault();var p=toVB(e);zoomAt(p[0],p[1],e.deltaY<0?1.2:1/1.2);},{passive:false});
+  var down=false,lx=0,ly=0;
+  svg.addEventListener("pointerdown",function(e){down=true;lx=e.clientX;ly=e.clientY;try{svg.setPointerCapture(e.pointerId);}catch(_){}});
+  svg.addEventListener("pointermove",function(e){if(!down)return;var r=svg.getBoundingClientRect();S.tx+=(e.clientX-lx)/r.width*S.vbw;S.ty+=(e.clientY-ly)/r.height*S.vbh;lx=e.clientX;ly=e.clientY;applyTransform();});
+  svg.addEventListener("pointerup",function(){down=false;});svg.addEventListener("pointercancel",function(){down=false;});
+}
+function zoomAt(cx,cy,f){var ns=Math.max(1,Math.min(16,S.s*f)),k=ns/S.s;S.tx=cx-(cx-S.tx)*k;S.ty=cy-(cy-S.ty)*k;S.s=ns;if(S.s<=1.001){S.s=1;S.tx=0;S.ty=0;}applyTransform();}
+function countByPais(d){var c={uruguay:0,argentina:0,brasil:0};d.pts.forEach(function(p){if(c[p.pais]!=null)c[p.pais]++;});return c;}
+function sinPorTipo(sin){var c={grua:0,camion:0,remolque:0};sin.forEach(function(r){if(c[r.tipo]!=null)c[r.tipo]++;});var p=[];["grua","camion","remolque"].forEach(function(t){if(c[t])p.push(c[t]+" "+(t==="grua"?"grúas":t==="camion"?"camiones":"remolques"));});return p.join(" · ");}
+
+window.MapaCO={
+  focus:function(p){S.focus=p;S.sel=null;dibujar();var seg=document.getElementById("mco-focus");if(seg){var b=seg.querySelectorAll("button");for(var i=0;i<b.length;i++)b[i].classList.remove("active");var idx={todos:0,uruguay:1,argentina:2,brasil:3}[p];if(b[idx])b[idx].classList.add("active");}},
+  open:function(k){S.sel=k;renderPanel();},
+  zoom:function(f){zoomAt(S.vbw/2,S.vbh/2,f);},
+  reset:function(){S.s=1;S.tx=0;S.ty=0;applyTransform();},
+  init:function(){
+    var root=document.getElementById("mapa-root"); if(!root) return;
+    var data=buildPoints(); S.data=data;
+    var cnt=countByPais(data),tot=data.pts.length;
+    var fb=[["todos","🌎 Todos ("+tot+")"]].concat(["uruguay","argentina","brasil"].map(function(p){return [p,PFLAG[p]+" "+PNAME[p]+" ("+cnt[p]+")"];}))
+      .map(function(kv){return '<button class="'+(S.focus===kv[0]?"active":"")+'" onclick="MapaCO.focus(\''+kv[0]+'\')">'+kv[1]+'</button>';}).join("");
+    root.innerHTML=
+      '<div class="mco-note">🗺 Equipos por ubicación sobre el mapa de Uruguay, Argentina y Brasil. Mostrando <strong>'+tot+'</strong> equipo'+(tot===1?"":"s")+' ubicado'+(tot===1?"":"s")+'. Arrastrá para mover, rueda o pellizco para zoom. Un punto con número agrupa varios equipos — tocalo para verlos.</div>'
+      +'<div class="mco-bar"><div class="mco-seg" id="mco-focus">'+fb+'</div><div class="mco-seg"><button onclick="MapaCO.zoom(1.3)">＋</button><button onclick="MapaCO.zoom(1/1.3)">−</button><button onclick="MapaCO.reset()">⤢ Ver todo</button></div></div>'
+      +'<div class="mco-legend"><span>🟩 disponible</span><span>🟧 ocupado</span><span>⬛ mantenim.</span><span>🟥 baja</span><span>🔵 varios equipos (número)</span></div>'
+      +'<div id="mapa-svg-host"></div>'
+      +'<div id="mapa-panel" class="mco-panel"></div>'
+      +(data.sin.length?'<div class="mco-warn"><strong>⚠ '+data.sin.length+' equipos sin ubicación cargada</strong> — no se pueden poner en el mapa hasta cargarles una localidad o coordenada (ficha del equipo → ubicación). '+esc(sinPorTipo(data.sin))+'.</div>'
+         +'<div class="mco-chips">'+data.sin.slice().sort(function(a,b){return (a.nombre||"").localeCompare(b.nombre||"","es",{numeric:true});}).map(function(r){return '<span class="mco-chip">'+tipoIcon(r.tipo)+' '+esc(r.nombre)+'</span>';}).join("")+'</div>':"");
+    dibujar();
+  }
+};
+if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",window.MapaCO.init);
+else window.MapaCO.init();
+})();
+</script>
+<%- include('partials/bottom') %>
