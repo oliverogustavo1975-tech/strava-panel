@@ -123,7 +123,7 @@ app.use("/recursos", require("./routes/recursos"));
 app.get("/trabajos", async (req, res, next) => {
   try {
     const [{ rows: jobs }, { rows: resources }] = await Promise.all([
-      db.query("SELECT * FROM jobs ORDER BY fecha_inicio DESC"),
+            db.query("SELECT * FROM jobs ORDER BY orden ASC NULLS LAST, fecha_inicio ASC"),
       db.query("SELECT id, nombre FROM resources"),
     ]);
     const nameMap = buildNameMap(resources);
