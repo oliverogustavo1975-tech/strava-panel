@@ -121,3 +121,25 @@ router.post("/:id/eliminar", requireAuth, async (req, res, next) => {
 });
 
 module.exports = router;
+
+// Subir / bajar un trabajo activo en la lista de prioridades.
+router.post("/:id/mover", requireAuth, async (req, res, next) => {
+  try {
+    const dir = req.body.dir === "up" ? -1 : 1;
+    const { rows } = await db.query(
+      "SELECT id FROM jobs WHERE estado IN ('pendiente','en_curso') ORDER BY orden ASC NULLS LAST, fecha_inicio ASC, id"
+    );
+    const ids = rows.map(r => r.id);
+    const i = ids.indexOf(req.params.id);
+    const k = i + dir;
+    if (i >= 0 && k >= 0 && k < ids.length) {
+      [ids[i], ids[k]] = [ids[k], ids[i]];
+    }
+    for (let n = 0; n < ids.length; n++) {
+      await db.query("UPDATE jobs SET orden=$2 WHERE id=$1", [ids[n], n + 1]);
+    }
+    res.redirect("/trabajos#t-" + req.params.id);
+  } catch (err) {
+    next(err);
+  }
+});
