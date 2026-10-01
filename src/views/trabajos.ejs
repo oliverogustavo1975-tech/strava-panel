@@ -31,8 +31,8 @@
     <div class="gen-note">Actualizado: <%= generatedAt.toLocaleString("es-UY") %></div>
   </div>
 
-  <% function jobCard(j) { %>
-    <div class="job-card">
+  <% function jobCard(j, idx, arr) { var activo = (j.estado === "pendiente" || j.estado === "en_curso"); %>
+    <div class="job-card" id="t-<%= j.id %>">
       <div class="job-top">
         <div>
           <div class="job-title"><%= j.titulo %></div>
@@ -41,6 +41,13 @@
         <div class="res-top-right">
           <span class="pill pill-<%= j.estadoPill %>"><span class="dot" style="background:currentColor"></span><%= j.estadoLabel %></span>
           <% if (isAdmin) { %><a class="edit-link" href="/trabajos/<%= j.id %>/editar">Editar</a><% } %>
+          <% if (isAdmin && activo) { %>
+            <form method="post" action="/trabajos/<%= j.id %>/mover" class="inline-form"><input type="hidden" name="dir" value="up"><button class="btn btn-ghost btn-sm" type="submit" title="Subir (más prioridad)" <%= idx === 0 ? "disabled" : "" %>>▲</button></form>
+            <form method="post" action="/trabajos/<%= j.id %>/mover" class="inline-form"><input type="hidden" name="dir" value="down"><button class="btn btn-ghost btn-sm" type="submit" title="Bajar (menos prioridad)" <%= idx === arr.length - 1 ? "disabled" : "" %>>▼</button></form>
+          <% } %>
+          <% if (isAdmin) { %>
+            <form method="post" action="/trabajos/<%= j.id %>/eliminar" class="inline-form" onsubmit="return confirm('¿Eliminar este trabajo? No se puede deshacer.');"><button class="btn btn-ghost btn-sm" type="submit" title="Eliminar">🗑</button></form>
+          <% } %>
         </div>
       </div>
       <div class="job-meta">
