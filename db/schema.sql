@@ -229,3 +229,4 @@ CREATE TABLE IF NOT EXISTS items_custom (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS items_custom_tipo_idx ON items_custom(tipo_id);
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS orden integer;
