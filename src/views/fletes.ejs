@@ -18,6 +18,7 @@
       <a class="nav-link" href="/trabajos">Trabajos</a>
       <a class="nav-link active" href="/fletes">Fletes</a>
       <a class="nav-link" href="/deposito">Depósito</a>
+      <a class="nav-link" href="/mapa">🗺 Mapa</a>
       <a class="nav-link" href="/personal">Personal</a>
     </nav>
     <div class="topbar-actions">
@@ -41,8 +42,8 @@
     <div class="flete-card">
       <div class="flete-top">
         <div>
-          <div class="job-title"><%= f.componente || "Sin componente" %></div>
-          <div class="flete-sub"><%= f.cliente || "Sin cliente" %><%= f.trabajoTitulo ? " · " + f.trabajoTitulo : "" %></div>
+          <div class="job-title">👤 <%= f.cliente || "Sin cliente" %><%= f.solicitante ? " · solicita " + f.solicitante : "" %></div>
+          <div class="flete-sub"><%= f.fecha ? new Date(f.fecha).toLocaleString("es-UY") : "Fecha sin definir" %><%= f.trabajoTitulo ? " · " + f.trabajoTitulo : "" %></div>
         </div>
         <div class="res-top-right">
           <span class="pill pill-<%= f.llegado ? "disponible" : "ocupado" %>">
@@ -53,23 +54,20 @@
         </div>
       </div>
       <div class="flete-route">
-        <span><%= f.origen_texto || "Origen sin definir" %></span>
+        <span>📍 <%= f.origen_texto || "Origen sin definir" %><% if (f.origen_maps_url) { %> <a href="<%= f.origen_maps_url %>" target="_blank" rel="noopener">🗺 mapa</a><% } %></span>
         <span class="arrow">→</span>
-        <span><%= f.destino_texto || "Destino sin definir" %></span>
+        <span>🏁 <%= f.destino_texto || "Destino sin definir" %><% if (f.destino_maps_url) { %> <a href="<%= f.destino_maps_url %>" target="_blank" rel="noopener">🗺 mapa</a><% } %></span>
       </div>
-      <% if (f.origen_maps_url || f.destino_maps_url) { %>
-      <div class="flete-mapas">
-        <% if (f.origen_maps_url) { %><a href="<%= f.origen_maps_url %>" target="_blank" rel="noopener">📍 Ubicación del origen</a><% } %>
-        <% if (f.destino_maps_url) { %><a href="<%= f.destino_maps_url %>" target="_blank" rel="noopener">📍 Ubicación del destino</a><% } %>
-      </div>
-      <% } %>
       <div class="flete-detail">
-        <span><strong>Fecha:</strong> <%= f.fecha ? new Date(f.fecha).toLocaleString("es-UY") : "Sin definir" %></span>
+        <span>📦 <strong><%= f.componente || "Sin componente" %></strong><%= f.numero_serie ? " · S/N " + f.numero_serie : "" %></span>
+        <% if (f.peso_carga_t) { %><span><strong>Peso:</strong> <%= f.peso_carga_t %> t</span><% } %>
+        <% if (f.medida_ancho_m || f.medida_largo_m) { %><span><strong>Medidas:</strong> <%= f.medida_ancho_m ? f.medida_ancho_m + " m ancho" : "" %><%= (f.medida_ancho_m && f.medida_largo_m) ? " × " : "" %><%= f.medida_largo_m ? f.medida_largo_m + " m largo" : "" %></span><% } %>
+        <% if (f.necesita_grua) { %><span>🏗 <strong>Grúa carga/descarga:</strong> <%= f.gruaNombre || "a asignar" %></span><% } %>
+      </div>
+      <div class="flete-detail">
         <% if (f.camionNombre) { %><span><strong>Camión:</strong> <%= f.camionNombre %></span><% } %>
         <% if (f.remolqueNombre) { %><span><strong>Remolque:</strong> <%= f.remolqueNombre %></span><% } %>
         <% if (f.choferNombre) { %><span><strong>Chofer:</strong> <%= f.choferNombre %></span><% } %>
-        <% if (f.necesita_grua && f.gruaNombre) { %><span><strong>Grúa:</strong> <%= f.gruaNombre %></span><% } %>
-        <% if (f.peso_carga_t) { %><span><strong>Peso:</strong> <%= f.peso_carga_t %> t</span><% } %>
         <% if (f.km_recorridos) { %><span><strong>Km:</strong> <%= f.km_recorridos %></span><% } %>
         <% if (f.combustible_litros) { %><span><strong>Combustible:</strong> <%= f.combustible_litros %> L</span><% } %>
         <% if (f.combustible_costo) { %><span><strong>Gasto combustible:</strong> <%= f.combustible_costo %></span><% } %>
