@@ -12,14 +12,6 @@
     <h2><%= isNew ? "Nuevo flete" : "Editar flete" %></h2>
     <form method="post" action="<%= isNew ? '/fletes' : '/fletes/' + f.id %>">
       <label class="field">
-        <span>Componente</span>
-        <input type="text" name="componente" value="<%= f.componente || '' %>">
-      </label>
-      <label class="field">
-        <span>Número de serie</span>
-        <input type="text" name="numero_serie" value="<%= f.numero_serie || '' %>">
-      </label>
-      <label class="field">
         <span>Cliente</span>
         <input type="text" name="cliente" value="<%= f.cliente || '' %>">
       </label>
@@ -41,10 +33,6 @@
         </select>
       </label>
       <label class="field">
-        <span>Fecha</span>
-        <input type="datetime-local" name="fecha" value="<%= toInputLocal(f.fecha) %>">
-      </label>
-      <label class="field">
         <span>Origen (lugar, ej: Pando)</span>
         <input type="text" name="origen_texto" value="<%= f.origen_texto || '' %>">
       </label>
@@ -59,6 +47,42 @@
       <label class="field">
         <span>Ubicación del destino en Maps (opcional)</span>
         <input type="text" name="destino_maps_url" value="<%= f.destino_maps_url || '' %>">
+      </label>
+      <label class="field">
+        <span>Componente</span>
+        <input type="text" name="componente" value="<%= f.componente || '' %>">
+      </label>
+      <label class="field">
+        <span>Número de serie</span>
+        <input type="text" name="numero_serie" value="<%= f.numero_serie || '' %>">
+      </label>
+      <label class="field">
+        <span>Peso de carga (t)</span>
+        <input type="number" step="0.1" name="peso_carga_t" value="<%= f.peso_carga_t ?? '' %>">
+      </label>
+      <label class="field">
+        <span>Ancho (m)</span>
+        <input type="number" step="0.1" name="medida_ancho_m" value="<%= f.medida_ancho_m ?? '' %>">
+      </label>
+      <label class="field">
+        <span>Largo (m)</span>
+        <input type="number" step="0.1" name="medida_largo_m" value="<%= f.medida_largo_m ?? '' %>">
+      </label>
+      <label class="check">
+        <input type="checkbox" name="necesita_grua" value="on" id="necesita_grua" <%= f.necesita_grua?'checked':'' %>> Necesita grúa
+      </label>
+      <label class="field">
+        <span>Grúa</span>
+        <select name="grua_id">
+          <option value="">Sin asignar</option>
+          <% groups.grua.forEach(function(r){ %>
+          <option value="<%= r.id %>" <%= f.grua_id===r.id?'selected':'' %>><%= r.nombre %><%= r.identificador ? ' · '+r.identificador : '' %></option>
+          <% }); %>
+        </select>
+      </label>
+      <label class="field">
+        <span>Fecha</span>
+        <input type="datetime-local" name="fecha" value="<%= toInputLocal(f.fecha) %>">
       </label>
       <label class="field">
         <span>Camión</span>
@@ -86,30 +110,6 @@
           <option value="<%= r.id %>" <%= f.chofer_id===r.id?'selected':'' %>><%= r.nombre %></option>
           <% }); %>
         </select>
-      </label>
-      <label class="check">
-        <input type="checkbox" name="necesita_grua" value="on" id="necesita_grua" <%= f.necesita_grua?'checked':'' %>> Necesita grúa
-      </label>
-      <label class="field">
-        <span>Grúa</span>
-        <select name="grua_id">
-          <option value="">Sin asignar</option>
-          <% groups.grua.forEach(function(r){ %>
-          <option value="<%= r.id %>" <%= f.grua_id===r.id?'selected':'' %>><%= r.nombre %><%= r.identificador ? ' · '+r.identificador : '' %></option>
-          <% }); %>
-        </select>
-      </label>
-      <label class="field">
-        <span>Peso de carga (t)</span>
-        <input type="number" step="0.1" name="peso_carga_t" value="<%= f.peso_carga_t ?? '' %>">
-      </label>
-      <label class="field">
-        <span>Ancho (m)</span>
-        <input type="number" step="0.1" name="medida_ancho_m" value="<%= f.medida_ancho_m ?? '' %>">
-      </label>
-      <label class="field">
-        <span>Largo (m)</span>
-        <input type="number" step="0.1" name="medida_largo_m" value="<%= f.medida_largo_m ?? '' %>">
       </label>
       <label class="field">
         <span>Distancia (km)</span>
