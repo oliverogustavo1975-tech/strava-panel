@@ -174,3 +174,52 @@ body{background-image:url(/img/fondo.svg); background-size:1200px 800px; animati
 .nav{max-width:100%; overflow-x:auto; flex-wrap:nowrap;}
 .nav-link{white-space:nowrap;}
 @media (max-width:600px){ .apphome{grid-template-columns:repeat(2,1fr);} }
+
+/* ===== ESTILO TORRE: compacto, con color por estado ===== */
+:root{--r:12px;}
+.wrap{max-width:1320px;}
+body{padding:12px 14px 40px;}
+.topbar{margin-bottom:10px;gap:8px;}
+.brand h1{font-size:19px;}
+.stats{gap:8px;margin-bottom:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));}
+.stat-card{padding:9px 12px;border-radius:12px;}
+.stat-card .v{font-size:22px;margin-top:2px;}
+.pais-block{padding:10px 12px;margin-bottom:10px;border-radius:14px;}
+.pais-group{margin-top:10px;padding-top:8px;}
+.res-grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;}
+.res-card{padding:9px 11px;border-radius:12px;border-left:4px solid var(--border);transition:box-shadow .15s,transform .1s;}
+.res-card:hover{box-shadow:var(--shadow);transform:translateY(-1px);}
+.res-card:has(.pill-disponible){border-left-color:var(--ok);}
+.res-card:has(.pill-ocupado){border-left-color:var(--busy);}
+.res-card:has(.pill-mantenimiento){border-left-color:var(--maint);}
+.res-card:has(.pill-baja){border-left-color:var(--danger);}
+.res-name{font-size:13.5px;}
+.res-meta{margin-top:5px;}
+.res-busy-note{margin-top:5px;padding:4px 7px;font-size:11.5px;}
+.job-list,.flete-list{gap:8px;}
+.job-card,.flete-card{padding:10px 13px;border-radius:12px;border-left:4px solid var(--border);}
+.job-card:has(.pill-disponible),.flete-card:has(.pill-disponible){border-left-color:var(--ok);}
+.job-card:has(.pill-ocupado),.flete-card:has(.pill-ocupado){border-left-color:var(--busy);}
+.job-card:has(.pill-mantenimiento){border-left-color:var(--maint);}
+.job-card:has(.pill-baja){border-left-color:var(--danger);}
+.job-title{font-size:14.5px;}
+.job-meta,.flete-detail{margin-top:6px;gap:6px 12px;}
+.job-resources{margin-top:6px;}
+.pill{padding:2px 9px;font-size:11px;border:1px solid transparent;}
+.pill-disponible{border-color:#bfe6cf;}
+.pill-ocupado{border-color:#f0d3a8;}
+.pill-mantenimiento{border-color:#d9d4c9;}
+.pill-baja{border-color:#ecc2bc;}
+.res-chip{background:var(--accent-bg);color:var(--accent);font-weight:600;padding:2px 9px;}
+.flete-route{margin-top:5px;flex-wrap:wrap;}
+.flete-route a{font-size:11.5px;color:var(--accent);text-decoration:none;}
+.tile{min-height:88px;padding:14px 8px;border-radius:16px;}
+.tile .ico{font-size:30px;}
+.form-card{padding:16px 18px;}
+/* arrastrar para ordenar */
+.job-card[draggable="true"]{cursor:grab;}
+.job-card.dragging{opacity:.45;transform:scale(.99);}
+.job-card.drop-arriba{box-shadow:0 -3px 0 0 var(--accent);}
+.job-card.drop-abajo{box-shadow:0 3px 0 0 var(--accent);}
+.grip{color:var(--text-muted);font-size:15px;line-height:1;cursor:grab;user-select:none;margin-right:6px;}
+.orden-msg{font-size:12px;color:var(--text-muted);margin:-4px 0 8px;}
