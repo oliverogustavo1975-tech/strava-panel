@@ -24,6 +24,7 @@
       <a class="nav-link" href="/trabajos">Trabajos</a>
       <a class="nav-link" href="/fletes">Fletes</a>
       <a class="nav-link" href="/deposito">Depósito</a>
+      <a class="nav-link<%= activo==='mapa'?' active':'' %>" href="/mapa">🗺 Mapa</a>
       <a class="nav-link<%= activo==='otros'?' active':'' %>" href="/otros">Otros</a>
       <a class="nav-link<%= activo==='calculadora'?' active':'' %>" href="/calculadora">Calculadora</a>
       <a class="nav-link<%= activo==='costos'?' active':'' %>" href="/costos">Costos</a>
@@ -42,4 +43,3 @@
     <div class="gen-note">Actualizado: <%= new Date().toLocaleString("es-UY") %></div>
   </div>
 <script>if ("serviceWorker" in navigator) { navigator.serviceWorker.register("/sw.js").catch(function(){}); }</script>
-
