@@ -193,6 +193,35 @@ app.get("/deposito", async (req, res, next) => {
   }
 });
 
+app.get("/mapa", async (req, res, next) => {
+  try {
+    const [{ rows: resources }, { rows: jobs }, { rows: fletes }] = await Promise.all([
+      db.query("SELECT * FROM resources ORDER BY nombre"),
+      db.query("SELECT * FROM jobs WHERE estado <> 'cancelado'"),
+      db.query("SELECT * FROM fletes WHERE fecha_llegada IS NULL"),
+    ]);
+    const recursos = resources
+      .filter(r => r.tipo !== "operario")
+      .map(r => ({
+        id: r.id, tipo: r.tipo, nombre: r.nombre, identificador: r.identificador,
+        ubicacion_texto: r.ubicacion_texto, ubicacion_maps_url: r.ubicacion_maps_url,
+        status: resourceStatus(r, jobs),
+      }));
+    const trabajos = jobs
+      .filter(j => j.estado !== "finalizado")
+      .map(j => ({ titulo: j.titulo, cliente: j.cliente, ubicacion: j.ubicacion, ubicacion_maps_url: j.ubicacion_maps_url, estado: j.estado }));
+    const fl = fletes.map(f => ({
+      componente: f.componente, cliente: f.cliente,
+      origen_texto: f.origen_texto, origen_maps_url: f.origen_maps_url,
+      destino_texto: f.destino_texto, destino_maps_url: f.destino_maps_url,
+    }));
+    const mapaJson = JSON.stringify({ recursos, trabajos, fletes: fl }).replace(/</g, "\\u003c");
+    res.render("mapa", { mapaJson, generatedAt: new Date() });
+  } catch (err) {
+    next(err);
+  }
+});
+
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).send("Error del servidor: " + err.message);
