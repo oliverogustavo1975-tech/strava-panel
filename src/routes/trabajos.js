@@ -143,3 +143,16 @@ router.post("/:id/mover", requireAuth, async (req, res, next) => {
     next(err);
   }
 });
+
+// Guardar el orden de prioridad al arrastrar (recibe ids separados por coma).
+router.post("/orden/guardar", requireAuth, async (req, res, next) => {
+  try {
+    const ids = String(req.body.ids || "").split(",").map(x => x.trim()).filter(Boolean);
+    for (let n = 0; n < ids.length; n++) {
+      await db.query("UPDATE jobs SET orden=$2 WHERE id=$1 AND estado IN ('pendiente','en_curso')", [ids[n], n + 1]);
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
