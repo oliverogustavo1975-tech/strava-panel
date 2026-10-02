@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Central de Operaciones — Recursos</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <h1>Central de Operaciones</h1>
+      <div class="tag">Grúas, camiones y operarios — disponibilidad en tiempo real</div>
+    </div>
+    <nav class="nav">
+      <a class="nav-link active" href="/recursos">Recursos</a>
+      <a class="nav-link" href="/trabajos">Trabajos</a>
+      <a class="nav-link" href="/fletes">Fletes</a>
+      <a class="nav-link" href="/deposito">Depósito</a>
+      <a class="nav-link" href="/mapa">🗺 Mapa</a>
+      <a class="nav-link" href="/personal">Personal</a>
+    </nav>
+    <div class="topbar-actions">
+      <% if (isAdmin) { %>
+        <a class="btn btn-primary btn-sm" href="/recursos/nuevo">+ Nuevo recurso</a>
+        <form method="post" action="/logout" class="inline-form"><button class="btn btn-ghost btn-sm" type="submit">Salir</button></form>
+      <% } else { %>
+        <a class="btn btn-ghost btn-sm" href="/login">Ingresar</a>
+      <% } %>
+    </div>
+    <div class="gen-note">Actualizado: <%= generatedAt.toLocaleString("es-UY") %></div>
+  </div>
+
+  <div class="stats">
+    <% TIPOS.forEach(function(t){ var s = counts[t]; var pct = s.total ? Math.round((s.ocupado/s.total)*100) : 0; %>
+    <div class="stat-card">
+      <div class="k"><%= TIPO_LABEL_PL[t] %></div>
+      <div class="v"><%= s.disponible %> <span class="total">disponibles de <%= s.total %></span></div>
+      <div class="stat-breakdown">
+        <span><span class="dot" style="background:var(--busy)"></span><%= s.ocupado %> ocupado<%= s.ocupado===1?"":"s" %></span>
+        <span><span class="dot" style="background:var(--maint)"></span><%= s.mantenimiento %> mantenim.</span>
+        <span><span class="dot" style="background:var(--danger)"></span><%= s.baja %> baja</span>
+      </div>
+    </div>
+    <% }); %>
+  </div>
+
+  <% if (!byPais.length) { %>
+    <div class="empty">Todavía no hay recursos cargados.</div>
+  <% } %>
+
+  <% byPais.forEach(function(group){
+       var equipos = group.resources.filter(function(r){ return r.tipo !== "operario"; });
+       var personal = group.resources.filter(function(r){ return r.tipo === "operario"; });
+  %>
+  <section class="pais-block">
+    <div class="pais-head">
+      <h2><%= group.flag %> <%= group.label %></h2>
+      <span class="pais-sub"><%= group.resources.length %> recursos</span>
+    </div>
+    <% ["grua","camion","remolque"].forEach(function(t){
+         var arr = equipos.filter(function(r){ return r.tipo === t; });
+         if (!arr.length) return;
+         var libres = arr.filter(function(r){ return r.status.code === "disponible"; }).length;
+    %>
+    <div class="pais-group">
+      <h3><%= TIPO_LABEL_PL[t] %> · <%= arr.length %> (<%= libres %> disponibles)</h3>
+      <div class="res-grid">
+        <% arr.forEach(function(r){ %>
+        <div class="res-card">
+          <div class="res-top">
+            <div>
+              <div class="res-name"><%= r.nombre %></div>
+              <div class="res-id"><%= r.identificador || "sin identificador" %></div>
+            </div>
+            <div class="res-top-right">
+              <span class="pill pill-<%= r.status.code %>"><span class="dot" style="background:currentColor"></span><%= r.status.label %></span>
+              <% if (isAdmin) { %><a class="edit-link" href="/recursos/<%= r.id %>/editar">Editar</a><% } %>
+            </div>
+          </div>
+          <div class="res-meta">
+            <%= [
+              r.tipo === "remolque" ? (r.tipo_remolque || "") : "",
+              r.capacidad_ton ? (r.tipo === "camion" ? "PBTC " : r.tipo === "remolque" ? "carga " : "") + r.capacidad_ton + " t" : ""
+            ].filter(Boolean).join(" · ") || "Sin datos cargados" %>
+          </div>
+          <% if (r.ubicacion_texto) { %><div class="res-meta">📍 <%= r.ubicacion_texto %></div><% } %>
+          <% if (r.status.job) { %>
+          <div class="res-busy-note"><%= r.status.job.fecha_fin ? "Hasta " + new Date(r.status.job.fecha_fin).toLocaleString("es-UY") : "Sin fecha de fin definida" %> — <%= r.status.job.titulo %></div>
+          <% } %>
+        </div>
+        <% }); %>
+      </div>
+    </div>
+    <% }); %>
+    <% if (personal.length) { %>
+    <div class="pais-group">
+      <h3>Personal — operarios · <%= personal.length %> (<%= personal.filter(function(r){return r.status.code==="disponible";}).length %> disponibles)</h3>
+      <div class="res-grid">
+        <% personal.forEach(function(r){ %>
+        <div class="res-card">
+          <div class="res-top">
+            <div>
+              <div class="res-name"><%= r.nombre %></div>
+              <div class="res-id"><%= r.especialidad || "Sin especialidad" %></div>
+            </div>
+            <div class="res-top-right">
+              <span class="pill pill-<%= r.status.code %>"><span class="dot" style="background:currentColor"></span><%= r.status.label %></span>
+              <% if (isAdmin) { %><a class="edit-link" href="/recursos/<%= r.id %>/editar">Editar</a><% } %>
+            </div>
+          </div>
+          <% if (r.status.job) { %>
+          <div class="res-busy-note"><%= r.status.job.fecha_fin ? "Hasta " + new Date(r.status.job.fecha_fin).toLocaleString("es-UY") : "Sin fecha de fin definida" %> — <%= r.status.job.titulo %></div>
+          <% } %>
+        </div>
+        <% }); %>
+      </div>
+    </div>
+    <% } %>
+  </section>
+  <% }); %>
+</div>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Central de Operaciones — Personal</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <h1>Central de Operaciones</h1>
+      <div class="tag">Personal — horas y días trabajados</div>
+    </div>
+    <nav class="nav">
+      <a class="nav-link" href="/recursos">Recursos</a>
+      <a class="nav-link" href="/trabajos">Trabajos</a>
+      <a class="nav-link" href="/fletes">Fletes</a>
+      <a class="nav-link" href="/deposito">Depósito</a>
+      <a class="nav-link" href="/mapa">🗺 Mapa</a>
+      <a class="nav-link active" href="/personal">Personal</a>
+    </nav>
+    <div class="topbar-actions">
+      <% if (isAdmin) { %>
+        <a class="btn btn-primary btn-sm" href="/personal/nuevo">+ Cargar horas</a>
+        <form method="post" action="/logout" class="inline-form"><button class="btn btn-ghost btn-sm" type="submit">Salir</button></form>
+      <% } else { %>
+        <a class="btn btn-ghost btn-sm" href="/login">Ingresar</a>
+      <% } %>
+    </div>
+    <div class="gen-note">Actualizado: <%= generatedAt.toLocaleString("es-UY") %></div>
+  </div>
+
+  <form method="get" action="/personal" class="filtro-form">
+    <label>Mes <input type="month" name="mes" value="<%= mes %>"></label>
+    <label>Persona
+      <select name="persona">
+        <option value="">Todas</option>
+        <% personas.forEach(function(p){ %><option value="<%= p.id %>" <%= persona===p.id?'selected':'' %>><%= p.nombre %></option><% }); %>
+      </select>
+    </label>
+    <button class="btn btn-ghost btn-sm" type="submit">Ver</button>
+  </form>
+
+  <div class="stats">
+    <div class="stat-card"><div class="k">Días trabajados</div><div class="v"><%= tot.dias %></div></div>
+    <div class="stat-card"><div class="k">Horas normales</div><div class="v"><%= tot.horas %></div></div>
+    <div class="stat-card"><div class="k">Horas extra</div><div class="v"><%= tot.extra %></div></div>
+    <div class="stat-card"><div class="k">Total horas</div><div class="v"><%= tot.horas + tot.extra %></div></div>
+  </div>
+
+  <div class="section-title">Resumen por persona</div>
+  <% if (!porPersona.length) { %><div class="empty">No hay horas cargadas en este mes.</div><% } else { %>
+  <div class="tabla-wrap"><table class="tabla">
+    <thead><tr><th>Persona</th><th>Días</th><th>Horas</th><th>Extra</th><th>Total</th></tr></thead>
+    <tbody>
+      <% porPersona.forEach(function(p){ %>
+      <tr><td><%= p.persona %></td><td><%= p.dias %></td><td><%= p.horas %></td><td><%= p.extra %></td><td><strong><%= p.horas + p.extra %></strong></td></tr>
+      <% }); %>
+    </tbody>
+  </table></div>
+  <% } %>
+
+  <div class="section-title">Horas por trabajo / flete</div>
+  <% if (!porTrabajo.length) { %><div class="empty">Sin datos.</div><% } else { %>
+  <div class="tabla-wrap"><table class="tabla">
+    <thead><tr><th>Trabajo o flete</th><th>Horas totales</th></tr></thead>
+    <tbody>
+      <% porTrabajo.forEach(function(t){ %><tr><td><%= t.destino %></td><td><%= t.total %></td></tr><% }); %>
+    </tbody>
+  </table></div>
+  <% } %>
+
+  <div class="section-title">Registros · <%= registros.length %></div>
+  <div class="tabla-wrap"><table class="tabla">
+    <thead><tr><th>Fecha</th><th>Persona</th><th>Horas</th><th>Extra</th><th>Trabajo / flete</th><th>Notas</th><% if (isAdmin) { %><th></th><% } %></tr></thead>
+    <tbody>
+      <% registros.forEach(function(r){ %>
+      <tr>
+        <td><%= r.fecha_s.split("-").reverse().join("/") %></td>
+        <td><%= r.persona || "(borrado)" %></td>
+        <td><%= Number(r.horas) %></td>
+        <td><%= Number(r.horas_extra) %></td>
+        <td><%= r.trabajo || r.flete || "—" %></td>
+        <td><%= r.notas || "" %></td>
+        <% if (isAdmin) { %><td><a class="edit-link" href="/personal/<%= r.id %>/editar">Editar</a></td><% } %>
+      </tr>
+      <% }); %>
+    </tbody>
+  </table></div>
+</div>
+</body>
+</html>

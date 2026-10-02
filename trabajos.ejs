@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Central de Operaciones — Trabajos</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <h1>Central de Operaciones</h1>
+      <div class="tag">Trabajos — planificados, en curso y cerrados</div>
+    </div>
+    <nav class="nav">
+      <a class="nav-link" href="/recursos">Recursos</a>
+      <a class="nav-link active" href="/trabajos">Trabajos</a>
+      <a class="nav-link" href="/fletes">Fletes</a>
+      <a class="nav-link" href="/deposito">Depósito</a>
+      <a class="nav-link" href="/mapa">🗺 Mapa</a>
+      <a class="nav-link" href="/personal">Personal</a>
+    </nav>
+    <div class="topbar-actions">
+      <% if (isAdmin) { %>
+        <a class="btn btn-primary btn-sm" href="/trabajos/nuevo">+ Nuevo trabajo</a>
+        <form method="post" action="/logout" class="inline-form"><button class="btn btn-ghost btn-sm" type="submit">Salir</button></form>
+      <% } else { %>
+        <a class="btn btn-ghost btn-sm" href="/login">Ingresar</a>
+      <% } %>
+    </div>
+    <div class="gen-note">Actualizado: <%= generatedAt.toLocaleString("es-UY") %></div>
+  </div>
+
+  <% function jobCard(j, idx, arr) { var activo = (j.estado === "pendiente" || j.estado === "en_curso"); %>
+    <div class="job-card" id="t-<%= j.id %>">
+      <div class="job-top">
+        <div>
+          <div class="job-title"><%= j.titulo %></div>
+          <div class="job-sub"><%= j.cliente || "Sin cliente" %><%= j.ubicacion ? " · " + j.ubicacion : "" %></div>
+        </div>
+        <div class="res-top-right">
+          <span class="pill pill-<%= j.estadoPill %>"><span class="dot" style="background:currentColor"></span><%= j.estadoLabel %></span>
+          <% if (isAdmin) { %><a class="edit-link" href="/trabajos/<%= j.id %>/editar">Editar</a><% } %>
+          <% if (isAdmin && activo) { %>
+            <form method="post" action="/trabajos/<%= j.id %>/mover" class="inline-form"><input type="hidden" name="dir" value="up"><button class="btn btn-ghost btn-sm" type="submit" title="Subir (más prioridad)" <%= idx === 0 ? "disabled" : "" %>>▲</button></form>
+            <form method="post" action="/trabajos/<%= j.id %>/mover" class="inline-form"><input type="hidden" name="dir" value="down"><button class="btn btn-ghost btn-sm" type="submit" title="Bajar (menos prioridad)" <%= idx === arr.length - 1 ? "disabled" : "" %>>▼</button></form>
+          <% } %>
+          <% if (isAdmin) { %>
+            <form method="post" action="/trabajos/<%= j.id %>/eliminar" class="inline-form" onsubmit="return confirm('¿Eliminar este trabajo? No se puede deshacer.');"><button class="btn btn-ghost btn-sm" type="submit" title="Eliminar">🗑</button></form>
+          <% } %>
+        </div>
+      </div>
+      <div class="job-meta">
+        <span><strong>Inicio:</strong> <%= j.fecha_inicio ? new Date(j.fecha_inicio).toLocaleString("es-UY") : "Sin definir" %></span>
+        <span><strong>Fin:</strong> <%= j.fecha_fin ? new Date(j.fecha_fin).toLocaleString("es-UY") : "Sin definir" %></span>
+        <% if (j.tonelaje_requerido) { %><span><strong>Tonelaje:</strong> <%= j.tonelaje_requerido %> t</span><% } %>
+        <% if (j.tipo_grua_requerida) { %><span><strong>Grúa requerida:</strong> <%= j.tipo_grua_requerida %></span><% } %>
+      </div>
+      <% var chips = [].concat(
+           j.gruasNombres.map(function(n){ return {n:n, k:"grúa"}; }),
+           j.camionesNombres.map(function(n){ return {n:n, k:"camión"}; }),
+           j.remolquesNombres.map(function(n){ return {n:n, k:"remolque"}; }),
+           j.operariosNombres.map(function(n){ return {n:n, k:"operario"}; })
+         ); %>
+      <% if (chips.length) { %>
+      <div class="job-resources">
+        <% chips.forEach(function(c){ %><span class="res-chip"><%= c.n %></span><% }); %>
+      </div>
+      <% } %>
+      <% if (j.notas_tecnicas) { %><div class="job-notas"><%= j.notas_tecnicas %></div><% } %>
+    </div>
+  <% } %>
+
+  <div class="section-title">Activos y pendientes · <%= activos.length %></div>
+  <% if (!activos.length) { %>
+    <div class="empty">No hay trabajos activos o pendientes.</div>
+  <% } %>
+  <div class="job-list">
+    <% activos.forEach(jobCard); %>
+  </div>
+
+  <% if (cerrados.length) { %>
+  <div class="section-title">Finalizados y cancelados · <%= cerrados.length %></div>
+  <div class="job-list">
+    <% cerrados.forEach(jobCard); %>
+  </div>
+  <% } %>
+</div>
+</body>
+</html>

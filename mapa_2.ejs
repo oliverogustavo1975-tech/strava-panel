@@ -1,0 +1,177 @@
+<%- include('partials/top', { titulo: 'Mapa', tag: 'Ubicación de la flota — grúas, camiones, remolques, trabajos y fletes', activo: 'mapa', ruta: '/mapa' }) %>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+#mapa-root{max-width:1240px;margin:0 auto;}
+.mco-note{font-size:13px;color:#33424f;background:#EEF2F6;border:1px solid #D6DEE6;border-radius:10px;padding:10px 12px;margin:14px 0 10px;}
+.mco-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px;}
+.mco-seg{display:flex;flex-wrap:wrap;border:1px solid #C9D2DA;border-radius:8px;overflow:hidden;}
+.mco-seg button{border:none;background:#fff;color:#33424f;padding:7px 12px;font-size:12.5px;cursor:pointer;border-right:1px solid #C9D2DA;font-family:inherit;}
+.mco-seg button:last-child{border-right:none;}
+.mco-seg button:hover{background:#EEF2F6;}
+.mco-legend{display:flex;gap:6px 16px;flex-wrap:wrap;font-size:12px;color:#5C6B7A;margin-bottom:8px;align-items:center;}
+.mco-legend i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;border:2px solid #fff;box-shadow:0 0 0 1px #888;vertical-align:-2px;}
+#mapa-map{height:72vh;min-height:420px;border:1px solid #C9D2DA;border-radius:12px;z-index:0;}
+.mk{display:flex;align-items:center;justify-content:center;border-radius:50%;border:3px solid #fff;color:#fff;font-weight:700;font-size:15px;box-shadow:0 1px 5px rgba(0,0,0,.55);}
+.mk.sq{border-radius:8px;}
+.mk.job{background:#1F3A5C;}
+.mk.flt{background:#7B3FB5;}
+.mk-lbl{background:rgba(255,255,255,.92);border:1px solid #889;border-radius:5px;padding:1px 5px;font-size:11px;font-weight:600;color:#1F3A5C;white-space:nowrap;box-shadow:none;}
+.leaflet-tooltip.mk-lbl:before{display:none;}
+.mco-pop{font-size:12.5px;min-width:200px;}
+.mco-pop h4{margin:0 0 6px;font-size:13.5px;}
+.mco-pop .r{display:flex;justify-content:space-between;gap:10px;border-top:1px solid #E1E7ED;padding:4px 0;}
+.mco-pill{display:inline-flex;align-items:center;padding:1px 8px;border-radius:99px;font-size:11px;font-weight:600;white-space:nowrap;}
+.mco-disponible{background:#E1F8EA;color:#14A04A;}
+.mco-ocupado{background:#FBEEDD;color:#C8720A;}
+.mco-mantenimiento{background:#EEECE7;color:#6B6357;}
+.mco-baja{background:#F8E6E3;color:#C0392B;}
+.mco-warn{font-size:12.5px;color:#33424f;background:#FBF3E6;border:1px solid #EBD9B8;border-left:4px solid #C8720A;border-radius:10px;padding:10px 12px;margin-top:12px;}
+.mco-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.mco-chip{background:#EEF2F6;border:1px solid #D6DEE6;border-radius:7px;padding:4px 9px;font-size:12px;color:#33424f;}
+</style>
+<div id="mapa-root">
+  <div class="mco-note">🗺 Mapa con calles y <strong>rutas nacionales</strong>, satélite y relieve (botón de capas arriba a la derecha del mapa). Podés prender o apagar grúas, camiones, remolques, trabajos y fletes. Tocá un punto para ver el detalle.</div>
+  <div class="mco-bar">
+    <div class="mco-seg">
+      <button onclick="MapaCO.pais('uruguay')">🇺🇾 Uruguay</button>
+      <button onclick="MapaCO.pais('region')">🌎 Uruguay + región</button>
+      <button onclick="MapaCO.pais('argentina')">🇦🇷 Argentina</button>
+      <button onclick="MapaCO.pais('brasil')">🇧🇷 Brasil</button>
+      <button onclick="MapaCO.equipos()">📍 Ver mis equipos</button>
+    </div>
+  </div>
+  <div class="mco-legend"><span><i style="background:#14A04A"></i>disponible</span><span><i style="background:#E08A1E"></i>ocupado</span><span><i style="background:#6B6357"></i>mantenimiento</span><span><i style="background:#C0392B"></i>baja</span><span><i style="background:#2C5F8A"></i>varios equipos (número)</span><span>▣ azul oscuro = trabajo</span><span>▣ violeta = flete (origen → destino)</span></div>
+  <div id="mapa-map"></div>
+  <div id="mapa-sin"></div>
+</div>
+<script>window.__MAPA__ = <%- mapaJson %>;</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function(){
+"use strict";
+var D = window.__MAPA__ || {recursos:[],trabajos:[],fletes:[]};
+var GEO = {
+  "gruasmar":[-34.6932,-56.2399],"pampa":[-32.2467,-56.2201],"parque eolico pampa":[-32.2467,-56.2201],"parque eolico pampa uruguay":[-32.2467,-56.2201],
+  "libertad":[-34.6295,-56.5891],"centenario":[-32.8716,-56.4847],"florida":[-34.0956,-56.2144],"parque eolico florida":[-34.0956,-56.2144],
+  "parque eolico florida 1":[-34.0956,-56.2144],"parque eolico florida 2":[-34.0956,-56.2144],"valentines":[-33.2558,-54.4631],
+  "parque eolico valentines":[-33.2558,-54.4631],"talas de maciel":[-33.6145,-56.6911],"melo":[-32.3668,-54.1676],"melo wind":[-32.3668,-54.1676],
+  "parque eolico melo wind":[-32.3668,-54.1676],"parque eolico melowind":[-32.3668,-54.1676],"general hacha":[-37.3787,-64.5956],"general acha":[-37.3787,-64.5956],
+  "parque eolico general hacha":[-37.3787,-64.5956],"montevideo":[-34.9011,-56.1645],"puerto de montevideo":[-34.9047,-56.2086],"durazno":[-33.3800,-56.5230],
+  "salto":[-31.3833,-57.9667],"rocha":[-34.4826,-54.3380],"rivera":[-30.9053,-55.5508],"paysandu":[-32.3214,-58.0756],"colonia":[-34.4626,-57.8398],
+  "tacuarembo":[-31.7169,-55.9811],"minas":[-34.3759,-55.2377],"maldonado":[-34.9000,-54.9500],"punta del este":[-34.9475,-54.9333],"fray bentos":[-33.1167,-58.3],
+  "mercedes":[-33.2524,-58.0305],"trinidad":[-33.5167,-56.9],"treinta y tres":[-33.2333,-54.3833],"canelones":[-34.5228,-56.2778],"san jose":[-34.3375,-56.7136],
+  "artigas":[-30.4,-56.4667],"nueva palmira":[-33.8764,-58.4036],"buenos aires":[-34.6037,-58.3816],"san luis":[-33.2950,-66.3356],"porto alegre":[-30.0346,-51.2177],
+  "pelotas":[-31.7719,-52.3425],"chui":[-33.6872,-53.4566],"argentina":[-33.2400,-65.0500],"brasil":[-30.0346,-51.2177],"uruguay":[-32.5228,-55.7658]
+};
+var STCOL = {disponible:"#14A04A",ocupado:"#E08A1E",mantenimiento:"#6B6357",baja:"#C0392B"};
+var TLBL = {grua:"Grúa",camion:"Camión",remolque:"Remolque"};
+var TICO = {grua:"🏗",camion:"🚚",remolque:"🔗"};
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function norm(s){return String(s==null?"":s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g," ").trim();}
+function parseCoords(str){
+  var v=String(str==null?"":str).trim(); if(!v) return null;
+  if(/^https?:\/\//i.test(v)||/goo\.gl|maps\./i.test(v)){
+    var m1=v.match(/@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/)||v.match(/[?&](?:q|query|ll)=(-?\d{1,3}\.\d+)[,%2C]+(-?\d{1,3}\.\d+)/i)||v.match(/!3d(-?\d{1,3}\.\d+)!4d(-?\d{1,3}\.\d+)/);
+    return m1?[parseFloat(m1[1]),parseFloat(m1[2])]:null;
+  }
+  var m=v.replace(/[()]/g,"").match(/^\s*(-?\d{1,3}(?:[.,]\d+)?)\s*[,; ]\s*(-?\d{1,3}(?:[.,]\d+)?)\s*$/);
+  if(m){var a=parseFloat(m[1].replace(",",".")),b=parseFloat(m[2].replace(",","."));if(isFinite(a)&&isFinite(b)&&Math.abs(a)<=90&&Math.abs(b)<=180)return [a,b];}
+  var d=v.match(/(\d{1,3})[°\s]+(\d{1,2})['\s]+([\d.]+)"?\s*([NS])[, ]+(\d{1,3})[°\s]+(\d{1,2})['\s]+([\d.]+)"?\s*([EWO])/i);
+  if(d){var lat=(+d[1])+(+d[2])/60+(+d[3])/3600;if(/s/i.test(d[4]))lat=-lat;var lng=(+d[5])+(+d[6])/60+(+d[7])/3600;if(/[wo]/i.test(d[8]))lng=-lng;return [lat,lng];}
+  return null;
+}
+// devuelve {ll:[lat,lng], aprox:bool, etq} o null. Prueba coordenadas/links y después el nombre del lugar.
+function locate(){
+  var vals=[].slice.call(arguments), i, c, g;
+  for(i=0;i<vals.length;i++){ c=parseCoords(vals[i]); if(c) return {ll:c,aprox:false,etq:(vals[i+1]||vals[i-1]||"coordenadas")}; }
+  for(i=0;i<vals.length;i++){ g=GEO[norm(vals[i])]; if(g) return {ll:g,aprox:true,etq:vals[i]}; }
+  // búsqueda por contenido: "Parque Eólico Pampa, Durazno" → clave más larga contenida en el texto
+  var best=null, bl=0;
+  for(i=0;i<vals.length;i++){ var n=norm(vals[i]); if(!n) continue; for(var k in GEO){ if(k.length>bl && k.length>=5 && n.indexOf(k)>=0){ best=k; bl=k.length; } } if(best) return {ll:GEO[best],aprox:true,etq:vals[i]}; }
+  return null;
+}
+function pop(h){ return '<div class="mco-pop">'+h+'</div>'; }
+
+var map = L.map("mapa-map",{zoomControl:true, worldCopyJump:false}).setView([-32.8,-56.0],7);
+var osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"});
+var sat = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Imágenes © Esri"});
+var topo = L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",{maxZoom:17,attribution:"© OpenTopoMap · OpenStreetMap"});
+var claro = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",{maxZoom:19,attribution:"© OpenStreetMap · CARTO"});
+var rutasSat = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,opacity:1});
+var lugaresSat = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",{maxZoom:19});
+osm.addTo(map);
+
+var capaTipo = {grua:L.layerGroup(), camion:L.layerGroup(), remolque:L.layerGroup()};
+var capaJobs = L.layerGroup(), capaFletes = L.layerGroup();
+Object.keys(capaTipo).forEach(function(k){capaTipo[k].addTo(map);}); capaJobs.addTo(map); capaFletes.addTo(map);
+var allPts = [];
+
+// ---- equipos ----
+var sin = [], grupos = {};
+D.recursos.forEach(function(r){
+  if(!TLBL[r.tipo]) return;
+  var l = locate(r.ubicacion_maps_url, r.ubicacion_texto);
+  if(!l){ sin.push(r); return; }
+  var key = r.tipo+"|"+l.ll[0].toFixed(3)+","+l.ll[1].toFixed(3);
+  (grupos[key] = grupos[key] || {tipo:r.tipo, ll:l.ll, aprox:l.aprox, etq:r.ubicacion_texto||l.etq, items:[]}).items.push(r);
+  if(!l.aprox) grupos[key].aprox=false;
+});
+Object.keys(grupos).forEach(function(k){
+  var g=grupos[k], n=g.items.length, code=(g.items[0].status&&g.items[0].status.code)||"disponible";
+  var col = n>1 ? "#2C5F8A" : (STCOL[code]||"#2C5F8A");
+  var icon = L.divIcon({className:"", iconSize:[34,34], iconAnchor:[17,17],
+    html:'<div class="mk" style="width:34px;height:34px;background:'+col+'">'+(n>1?n:TICO[g.tipo])+'</div>'});
+  var rows = g.items.slice().sort(function(a,b){return (a.nombre||"").localeCompare(b.nombre||"","es",{numeric:true});}).map(function(r){
+    var st=r.status||{code:"disponible",label:""};
+    return '<div class="r"><span>'+TICO[r.tipo]+' <strong>'+esc(r.nombre)+'</strong>'+(r.identificador?' <span style="color:#7A8794">· '+esc(r.identificador)+'</span>':'')+'</span><span class="mco-pill mco-'+esc(st.code)+'">'+esc(st.label||"")+'</span></div>';
+  }).join("");
+  var m = L.marker(g.ll,{icon:icon}).bindPopup(pop('<h4>📍 '+esc(g.etq||"Ubicación")+' · '+n+' '+(TLBL[g.tipo]||"").toLowerCase()+(n===1?"":"s")+'</h4>'+(g.aprox?'<div style="color:#7A8794;font-size:11px;margin-bottom:4px">ubicación aproximada (por nombre de lugar)</div>':'')+rows));
+  m.bindTooltip(n>1?(n+" equipos"):esc(g.items[0].nombre),{direction:"top",offset:[0,-16],className:"mk-lbl"});
+  m.addTo(capaTipo[g.tipo]); allPts.push(g.ll);
+});
+
+// ---- trabajos ----
+(D.trabajos||[]).forEach(function(j){
+  var l = locate(j.ubicacion_maps_url, j.ubicacion);
+  if(!l) return;
+  var icon = L.divIcon({className:"",iconSize:[30,30],iconAnchor:[15,15],html:'<div class="mk sq job" style="width:30px;height:30px">🏗</div>'});
+  L.marker(l.ll,{icon:icon}).bindPopup(pop('<h4>'+esc(j.titulo)+'</h4><div>'+esc(j.cliente||"Sin cliente")+'</div><div style="color:#7A8794">'+esc(j.ubicacion||"")+'</div><div style="margin-top:4px">'+esc(j.estado||"")+'</div>'+(l.aprox?'<div style="color:#7A8794;font-size:11px">ubicación aproximada</div>':'')))
+    .bindTooltip(esc(j.titulo),{direction:"top",offset:[0,-14],className:"mk-lbl"}).addTo(capaJobs);
+  allPts.push(l.ll);
+});
+
+// ---- fletes (origen → destino) ----
+(D.fletes||[]).forEach(function(f){
+  var o = locate(f.origen_maps_url, f.origen_texto), d = locate(f.destino_maps_url, f.destino_texto);
+  function pin(l, txt, ico){
+    var icon=L.divIcon({className:"",iconSize:[26,26],iconAnchor:[13,13],html:'<div class="mk sq flt" style="width:26px;height:26px;font-size:13px">'+ico+'</div>'});
+    return L.marker(l.ll,{icon:icon}).bindPopup(pop('<h4>🚚 '+esc(f.componente||"Flete")+'</h4><div>'+esc(f.cliente||"Sin cliente")+'</div><div style="margin-top:4px">'+txt+'</div>')).addTo(capaFletes);
+  }
+  if(o){ pin(o,"📍 Origen: "+esc(f.origen_texto||""),"📍"); allPts.push(o.ll); }
+  if(d){ pin(d,"🏁 Destino: "+esc(f.destino_texto||""),"🏁"); allPts.push(d.ll); }
+  if(o&&d) L.polyline([o.ll,d.ll],{color:"#7B3FB5",weight:3,opacity:.8,dashArray:"8 8"}).addTo(capaFletes);
+});
+
+L.control.layers(
+  {"🛣 Calles y rutas":osm,"🗺 Mapa claro":claro,"🛰 Satélite":sat,"⛰ Relieve":topo},
+  {"🏗 Grúas":capaTipo.grua,"🚚 Camiones":capaTipo.camion,"🔗 Remolques":capaTipo.remolque,"🧱 Trabajos":capaJobs,"📦 Fletes (origen → destino)":capaFletes,
+   "🛣 Rutas y nombres sobre satélite":rutasSat,"🏙 Localidades sobre satélite":lugaresSat},
+  {collapsed:false}).addTo(map);
+L.control.scale({imperial:false}).addTo(map);
+map.on("baselayerchange",function(e){ if(e.layer===sat){ if(!map.hasLayer(rutasSat)) rutasSat.addTo(map); if(!map.hasLayer(lugaresSat)) lugaresSat.addTo(map); } });
+
+var VISTAS = {uruguay:[[-35.1,-58.6],[-30.0,-53.0]], region:[[-39.5,-64.5],[-27.0,-49.0]], argentina:[[-55,-73.5],[-22,-53.5]], brasil:[[-33.8,-57.5],[-22,-44]]};
+window.MapaCO = {
+  pais:function(p){ map.fitBounds(VISTAS[p]); },
+  equipos:function(){ if(allPts.length) map.fitBounds(L.latLngBounds(allPts).pad(0.15),{maxZoom:11}); else map.fitBounds(VISTAS.uruguay); }
+};
+map.fitBounds(VISTAS.uruguay);
+
+if(sin.length){
+  var h='<div class="mco-warn"><strong>⚠ '+sin.length+' equipo'+(sin.length===1?"":"s")+' sin ubicación cargada</strong> — no se pueden poner en el mapa hasta cargarles una localidad o coordenadas (en la ficha del equipo, campo ubicación).</div><div class="mco-chips">'+
+    sin.slice().sort(function(a,b){return (a.nombre||"").localeCompare(b.nombre||"","es",{numeric:true});}).map(function(r){return '<span class="mco-chip">'+(TICO[r.tipo]||"")+' '+esc(r.nombre)+'</span>';}).join("")+'</div>';
+  document.getElementById("mapa-sin").innerHTML=h;
+}
+})();
+</script>
+<%- include('partials/bottom') %>
