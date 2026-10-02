@@ -18,6 +18,7 @@
       <a class="nav-link active" href="/trabajos">Trabajos</a>
       <a class="nav-link" href="/fletes">Fletes</a>
       <a class="nav-link" href="/deposito">Depósito</a>
+      <a class="nav-link" href="/mapa">🗺 Mapa</a>
       <a class="nav-link" href="/personal">Personal</a>
     </nav>
     <div class="topbar-actions">
@@ -32,10 +33,10 @@
   </div>
 
   <% function jobCard(j, idx, arr) { var activo = (j.estado === "pendiente" || j.estado === "en_curso"); %>
-    <div class="job-card" id="t-<%= j.id %>">
+    <div class="job-card" id="t-<%= j.id %>" data-id="<%= j.id %>" <%= (isAdmin && activo) ? 'draggable="true"' : '' %>>
       <div class="job-top">
         <div>
-          <div class="job-title"><%= j.titulo %></div>
+          <div class="job-title"><% if (isAdmin && activo) { %><span class="grip" title="Arrastrar para ordenar">⠿</span><% } %><%= j.titulo %></div>
           <div class="job-sub"><%= j.cliente || "Sin cliente" %><%= j.ubicacion ? " · " + j.ubicacion : "" %></div>
         </div>
         <div class="res-top-right">
@@ -75,7 +76,8 @@
   <% if (!activos.length) { %>
     <div class="empty">No hay trabajos activos o pendientes.</div>
   <% } %>
-  <div class="job-list">
+  <% if (isAdmin && activos.length > 1) { %><div class="orden-msg">Arrastrá las tarjetas para cambiar la prioridad.</div><% } %>
+  <div class="job-list" id="lista-activos">
     <% activos.forEach(jobCard); %>
   </div>
 
@@ -86,5 +88,32 @@
   </div>
   <% } %>
 </div>
+<script>
+(function(){
+  var lista = document.getElementById("lista-activos"); if(!lista) return;
+  var arrastrada = null;
+  function limpiar(){ [].forEach.call(lista.children,function(c){c.classList.remove("drop-arriba","drop-abajo");}); }
+  lista.addEventListener("dragstart",function(e){
+    var c = e.target.closest && e.target.closest(".job-card[draggable]"); if(!c) return;
+    arrastrada = c; c.classList.add("dragging"); e.dataTransfer.effectAllowed="move"; try{e.dataTransfer.setData("text/plain",c.dataset.id);}catch(_){}
+  });
+  lista.addEventListener("dragover",function(e){
+    if(!arrastrada) return; e.preventDefault();
+    var c = e.target.closest(".job-card"); limpiar();
+    if(!c || c===arrastrada) return;
+    var r = c.getBoundingClientRect(); c.classList.add(e.clientY < r.top + r.height/2 ? "drop-arriba":"drop-abajo");
+  });
+  lista.addEventListener("drop",function(e){
+    if(!arrastrada) return; e.preventDefault();
+    var c = e.target.closest(".job-card");
+    if(c && c!==arrastrada){ var r=c.getBoundingClientRect(); if(e.clientY < r.top + r.height/2) lista.insertBefore(arrastrada,c); else lista.insertBefore(arrastrada,c.nextSibling); }
+    limpiar();
+    var ids = [].map.call(lista.querySelectorAll(".job-card"),function(x){return x.dataset.id;}).join(",");
+    fetch("/trabajos/orden/guardar",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"ids="+encodeURIComponent(ids)})
+      .then(function(r){ if(!r.ok) throw new Error(); }).catch(function(){ alert("No se pudo guardar el orden. Recargá la página."); });
+  });
+  lista.addEventListener("dragend",function(){ if(arrastrada) arrastrada.classList.remove("dragging"); arrastrada=null; limpiar(); });
+})();
+</script>
 </body>
 </html>
