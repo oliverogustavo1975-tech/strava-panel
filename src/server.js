@@ -1,3 +1,8 @@
+/*
+ * Central de Operaciones
+ * (c) 2026 Gustavo OH. Todos los derechos reservados.
+ * Software propietario: prohibida su copia, modificacion o distribucion sin autorizacion escrita del autor.
+ */
 require("dotenv").config();
 const express = require("express");
 const path = require("path");
@@ -23,6 +28,7 @@ app.use(
 );
 app.use((req, res, next) => {
   res.locals.isAdmin = !!(req.session && req.session.isAdmin);
+  res.set("X-Robots-Tag", "noindex, nofollow");
   next();
 });
 
@@ -39,6 +45,8 @@ app.use((req, res, next) => {
         html = html.replace(/(<a class="nav-link[^"]*" href="\/recursos">)/, '<a class="nav-link" href="/inicio">Inicio</a>$1')
                    .replace(/(<a class="nav-link[^"]*" href="\/personal">Personal<\/a>)/, NAV_PRE + "$1" + NAV_POST);
       }
+      html = html.replace("</head>", '<meta name="robots" content="noindex,nofollow"><meta name="author" content="Gustavo OH"></head>')
+                 .replace("</body>", '<footer style="text-align:center;font-size:11.5px;color:#5C6B7A;padding:18px 0 6px">&copy; 2026 Gustavo OH &mdash; Central de Operaciones. Todos los derechos reservados.</footer></body>');
       return cb ? cb(null, html) : res.send(html);
     });
   };
